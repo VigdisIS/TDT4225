@@ -1,8 +1,71 @@
 \section{Theory}
 
-Hi! 
-Welcome to this \LaTeX-template. I will here aim to introduce you to, as well as motivate you to learn more about the features available in LaTeX through Overleaf. Many of the features you will come across in this template are not necessarily relevant to you at this point in time, and some will most likely seem way too advanced. However, keep in mind that you are not expected to understand everything at once either.
-
-I hope that you, with the assistance of what I provide you with here, are able to make your own LaTeX-templates containing your personal preferences. You may do it by directly changing variables in this template, or you may create a brand new containing only carefully selected features of your own. 
-
-As a final note, I want to wish you the best of luck learning LaTeX, but do keep in mind that this template is only scratching the surface.
+\begin{enumerate}
+    \item 
+        SSD 
+    \item 
+        asd
+    \item 
+        sad
+    \item 
+        asdasd
+    \item 
+        The numbers start at 1 with each use of the \texttt{enumerate} environment.
+    \item 
+        Another entry in the list
+    \item 
+        When it comes to fault tolerance, a hardware error could be a disk, 
+        power, CPU, or network failure. A software error could be a bug in the
+        system causing errors. It could also be system crashes due to errors 
+        caused by the system having been turned on for too long. Human errors 
+        are usually due to accidental actions such as deleting or overwriting a 
+        file by mistake, or inserting wrong data. 
+    \item 
+        To achieve fault tolerance, one could restart computers frequently to
+        avoid crashes due to the system having been running for too long. One 
+        could also store the data across multiple computers such that in the 
+        case one computer fails, only a small portion of the data is affected, 
+        though this is hard to do on stateful systems. Another way to achieve
+        fault tolerance is by replication, i.e. having the same data stored on
+        multiple computers. This way, if one computer fails, the data is still
+        available on the other computers, though this method could be expensive.
+    \item
+        SQL is a relational database where relationships between different data
+        in the database can be easily defined using joins. In a document 
+        database, however, this is not the case. This is due to the fact that 
+        the data is stored in documents, and the documents are self-contained,
+        i.e. not split into multiple tables. This structure also makes it bad 
+        for supporting many-to-many relationships, something SQL is good at. In
+        the case where we wish to model a paper that has many sections and 
+        words, and additionally many authors, where each author with name and 
+        address have many written papers, we would have to store each entity
+        in its own self-contained document. So we would have one document
+        representing each paper with sections and words, in addition to the 
+        authors of the paper. We would have another document representing all 
+        authors with their name and address. The relationship defining which
+        authors have written which papers would be stored in the paper document,
+        though to extract their name and address we would have to define 
+        many-to-many relationshops not contained in any of the documents,
+        presumably using application code or some other method. Using only
+        self-contained documents, we would have to store a lot of redundant, 
+        duplicate data where each paper has all authors, with their names and 
+        adresses as well, listed in the document. This is however not a good 
+        solution due to the fact that in different papers, the same author could
+        have their name spelt differently or have some name changes. Trying
+        to get all papers written by a specific author could prove difficult
+        due to this.
+    \item 
+        If the data comes in the form of self-contained documents where there 
+        are few relationshops between them, document databases are a good fit.
+        However, in the case where anything could be related to everything, a 
+        graph database would be a better fit. For example, when we want to store
+        data containing people and how they are related to each other, a graph
+        database would be preferable over a document database, as the data is
+        highly relational.
+    \item 
+        asdasd 
+    \item 
+        asdasd
+    \item
+        sad
+  \end{enumerate}

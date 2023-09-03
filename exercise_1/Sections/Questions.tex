@@ -2,17 +2,38 @@
 
 \begin{enumerate}
     \item 
-        SSD 
+        In an SSD, the Flash Translation Layer (FTL) is responsible for wear 
+        leveling, meaning distributing writes evenly across the entire disk. The 
+        data in the NAND, the type of flash memory used by most SSDs, cannot be 
+        updated in-place, only by erase-and-write cycles, which each NAND only 
+        has a limited number of. Furthermore, since in an SSD whole blocks have 
+        to be deleted when we wish to delete only a single page, we have to 
+        rewrite the entire block, except the page we wish to delete, to a new 
+        block. Frequent updates like this to a set of blocks will wear the 
+        blocks holding these pages out much faster than the other blocks. 
+        Therefore, writing to all blocks uniformly over time means no block is 
+        more likely to fail than others, and we can prolong the lifespan of the
+        SSD.
     \item 
-        asd
+        Sequential writes are important for performance on SSDs as when the disk
+        reaches full capacity, garbage collection has to be performed. This
+        becomes a very complex task when the data is written randomly, due to 
+        the FTL having to always maintain the mapping between logical and 
+        physical block addresses across the disk. When the data is written 
+        sequentially, however, invalidating blocks as eligible for erasure is 
+        done block by block since thats how they're written, and the write 
+        amplification is greatly reduced.
+        
     \item 
-        sad
+        Alignment of blocks to SSD pages 
     \item 
-        asdasd
+        The layout if an MemTable in RocksDB is
+        Thel ayout of an SSTable in RocksDB is 
     \item 
-        The numbers start at 1 with each use of the \texttt{enumerate} environment.
+        During compaction in RocksDB, 
     \item 
-        Another entry in the list
+        LSM-trees are regarded as more efficient than B+-trees for large volumes
+        of inserts due to
     \item 
         When it comes to fault tolerance, a hardware error could be a disk, 
         power, CPU, or network failure. A software error could be a bug in the

@@ -25,15 +25,37 @@
         amplification is greatly reduced.
         
     \item 
-        Alignment of blocks to SSD pages 
+        Alignment of blocks to clustered SSD pages improves performance by 
+        lowering the write latency in an SSD due to the fact that the write 
+        requests can be written to disk without any further write overhead. If 
+        the write request is not aligned to the page size, however, the SSD has 
+        to read the rest of the content of the previous clustered page, and then 
+        subsequently merge this with the updated data before being able to write 
+        the entire page back to the disk.
     \item 
-        The layout if an MemTable in RocksDB is
-        Thel ayout of an SSTable in RocksDB is 
+        The layout of a MemTable in RocksDB follows the structure where updates
+        are first inserted into the memtable until it reaches its maximum size.
+        RocksDB will then subsequently generate a new memtable for new updates,
+        and the old memtable's entries will be flushed to disk as an SSTable.
+
+        The layout of an SSTable in RocksDB follows a block-based table format 
+        where key-value pairs are stored in sorted order in blocks, along with
+        metadata and indexes.
     \item 
-        During compaction in RocksDB, 
+        During compaction in RocksDB, multiple SStables from the same level in
+        the LSM-tree are merged into a single SSTable in the next level, which 
+        are together then merged into a new, even larger SStable. If a key has
+        been marked as deleted during this process, it will be discarded and 
+        only the most recent version of a key is kept. This newly generated 
+        SSTable is then moved to the next level, and if this causes the next
+        level to have too many SSTables, this whole process is repeated in this
+        level.
     \item 
         LSM-trees are regarded as more efficient than B+-trees for large volumes
-        of inserts due to
+        of inserts due to the fact that the the B+-tree has to write to disk 
+        every time a new entry is inserted into the tree. LSM-trees on the other
+        hand buffer writes in their memtables, and only flushing to disk when
+        the memtable is full.
     \item 
         When it comes to fault tolerance, a hardware error could be a disk, 
         power, CPU, or network failure. A software error could be a bug in the

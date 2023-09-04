@@ -106,9 +106,26 @@
         database would be preferable over a document database, as the data is
         highly relational.
     \item 
-        asdasd 
+        One should use textual encodings instead of binary data encodings for 
+        sending data when 
     \item 
-        asdasd
+        \begin{enumerate}
+            \item 
+                Bitmap for the values:
+            \item 
+                Runlength encoding for the values:
+        \end{enumerate}
     \item
-        sad
+        Schema evolution, as well as forward and backward compatibility is
+        supported the following way in the different systems listed below:
+        \begin{itemize}
+            \item 
+                \textbf{MessagePack:}
+            \item 
+                \textbf{Apache Thrift:}
+            \item 
+                \textbf{Protocol Buffers:}
+            \item 
+                \textbf{Avro:}
+        \end{itemize}
   \end{enumerate}

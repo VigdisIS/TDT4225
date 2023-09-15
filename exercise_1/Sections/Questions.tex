@@ -107,25 +107,66 @@
         highly relational.
     \item 
         One should use textual encodings instead of binary data encodings for 
-        sending data when 
+        sending data when then the data needs to be inspected by humans, since
+        textual encodings are human-readable. Also when the data is supposed to
+        be sent and consumed by systems that use different programming
+        languages, textual encodings are a good choice since they are supported
+        across many different programming languages. 
     \item 
         \begin{enumerate}
             \item 
                 Bitmap for the values:
+                \newline32: 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0
+                \newline33: 0 0 0 0 0 0 0 0 1 1 1 1 0 0 0 1
+                \newline43: 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0
+                \newline63: 0 0 0 0 0 1 1 0 0 0 0 0 0 0 0 0
+                \newline87: 0 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0
+                \newline89: 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 0
             \item 
                 Runlength encoding for the values:
+                \newline32: 7, 1
+                \newline33: 8, 4, 3, 1
+                \newline43: 0, 3
+                \newline63: 5, 2
+                \newline87: 3, 2
+                \newline89: 12, 3
         \end{enumerate}
     \item
         Schema evolution, as well as forward and backward compatibility is
         supported the following way in the different systems listed below:
         \begin{itemize}
             \item 
-                \textbf{MessagePack:}
+                \textbf{MessagePack:} Old readers reading data that contains new 
+                fields from newer code will still be able to read the data, but 
+                the new fields will be ignored. When it comes to backward 
+                compatibility, however, new readers reading data that contains
+                old fields from older code will not be able to read the data. 
+                This is due to the fact that the new reader will not know how to
+                handle the old fields, and will therefore not be able to read
+                the data. Schema evolution in MessagePack is therefore not
+                inherently supported.
             \item 
-                \textbf{Apache Thrift:}
+                \textbf{Apache Thrift and Protocol Buffers:} Like in 
+                MessagePack, old readers reading data that contains new fields
+                from newer code will still be able to read the data, and the new
+                fields will be ignored. Unlike MessagePack, however, when it 
+                comes to backward compatibility,mnew readers reading data that 
+                contains old fields from older code will still be able to read 
+                the data. In Apache Thrift, removed fields are marked as void, 
+                and can therefore be ignored if old data containing that field 
+                is read. In Protocol Buffers, as long as field numbers pointing 
+                to different fields are always unique and reserved, they won't 
+                ever be reused accidentally. Therefore, since the new reader 
+                knows how to handle the old fields, schema evolution in Apache 
+                Thrift and Protocol Buffers is supported.
             \item 
-                \textbf{Protocol Buffers:}
-            \item 
-                \textbf{Avro:}
+                \textbf{Avro:} Avro also supports schema evolution, and uses 
+                two schemas to make this possible: a writer's schema and a 
+                reader's schema. When reading data, Avro resolves differences 
+                between these schemas, so that in forward compatibility, readers
+                should be able to use the old schema to read all data written
+                with the new schema. The same goes for backward compatibility:
+                readers using a new schema should be able to read all data 
+                written with the old schema.
         \end{itemize}
   \end{enumerate}

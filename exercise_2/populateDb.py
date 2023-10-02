@@ -99,6 +99,7 @@ class PopulateDB:
             print("Trackpoint table created")
             print("------------------------")
             self.db_connection.commit()
+
     def walkFiles(self):
         # walk through all 181 folders with user date
         for i in range(0, 182):
@@ -118,105 +119,102 @@ class PopulateDB:
             activities = []
             labels = []
             # walk through all the files inside that folder
-            for (_root, _dirs, files) in os.walk(path, topdown=True):
+            if os.listdir(path).__contains__("labels.txt"):
+                new_user.setHasLabel(True)
+                label_path = path + "/labels.txt"
+                f = open(label_path, "r")
+                label_path_lines = f.readlines()[1:]
+                for line in label_path_lines:
+                    split_line = line.replace("\n", "").replace("\t", " ").split(" ")
+                    start_datesplit = split_line[0].split("/")
+                    start_timesplit = split_line[1].split(":")
+                    d_start = date(int(start_datesplit[0]), int(start_datesplit[1]), int(start_datesplit[2]))
+                    t_start = time(int(start_timesplit[0]), int(start_timesplit[1]), int(start_timesplit[2]))
+
+                    start_datetime = datetime.combine(d_start, t_start)
+                            
+                    end_datesplit = split_line[2].split("/")
+                    end_timesplit = split_line[3].split(":")
+
+                    d_end = date(int(end_datesplit[0]), int(end_datesplit[1]), int(end_datesplit[2]))
+                    t_end = time(int(end_timesplit[0]), int(end_timesplit[1]), int(end_timesplit[2]))
+
+                    end_datetime = datetime.combine(d_end, t_end)
+
+                    mode_of_transportation = split_line[4]
+
+                    new_label: Label = Label(start_datetime, end_datetime, mode_of_transportation)
+
+                    labels.append(new_label)
+
 
                 # if the folder contains a labels.txt file, set the user hasLabel to true
                 # this is to make sure that we only search for labels to activities when the user data is labeled
-                if files.__contains__("labels.txt"):
-                    new_user.setHasLabel(True)
-                    label_path = path + "/labels.txt"
-                    f = open(label_path, "r")
-                    label_path_lines = f.readlines()[1:]
-                    for line in label_path_lines:
-                        split_line = line.replace("\n", "").replace("\t", " ").split(" ")
-
-                        start_datesplit = split_line[0].split("/")
-                        start_timesplit = split_line[1].split(":")
-
-                        d_start = date(int(start_datesplit[0]), int(start_datesplit[1]), int(start_datesplit[2]))
-                        t_start = time(int(start_timesplit[0]), int(start_timesplit[1]), int(start_timesplit[2]))
-
-                        start_datetime = datetime.combine(d_start, t_start)
-                            
-                        end_datesplit = split_line[2].split("/")
-                        end_timesplit = split_line[3].split(":")
-
-                        d_end = date(int(end_datesplit[0]), int(end_datesplit[1]), int(end_datesplit[2]))
-                        t_end = time(int(end_timesplit[0]), int(end_timesplit[1]), int(end_timesplit[2]))
-
-                        end_datetime = datetime.combine(d_end, t_end)
-
-                        mode_of_transportation = split_line[4]
-
-                        new_label: Label = Label(start_datetime, end_datetime, mode_of_transportation)
-
-                        labels.append(new_label)
+                    
 
                 # go through each individual file in the files
-                for filename in files:
-                    # if the filename is labels.txt skip that file
-                    if(filename == "labels.txt"):
+            for filename in os.listdir(path + "/Trajectory"):
+                # if the filename is labels.txt skip that file
+                if(filename == "labels.txt"):
                         continue
+                # set the id of the activity to the filename
+                new_id = filename.split(".")[0]
+
+                # initialize a new activity object
+                new_activity = Activity(new_id, i)
+
+                # set the path of the file that we are currently looking at
+                new_path = path + "/Trajectory/" + filename
+
+                # open the file and read through it
+                f = open(new_path, "r")
+
+                # we read all the lines in the file except the first 7 because they are not relevant
+                file_text_lines = f.readlines()[6:]
+
+                # if the file has more than 2500 lines (more than 2500 trackpoints) we skip that file to make sure that we do not proccess to much data
+                if (len(file_text_lines) >= 2500):
+                    continue
                     
-                    # set the id of the activity to the filename
-                    new_id = filename.split(".")[0]
+                start_trackpoint: TrackPoint = None
+                end_trackpoint: TrackPoint = None
+                # for each line in the file we split the line by "," and create a new trackpoint object
+                for line in file_text_lines:
+                    line = line.split(",")
 
-                    # initialize a new activity object
-                    new_activity = Activity(new_id, i)
-
-                    # set the path of the file that we are currently looking at
-                    new_path = path + "/Trajectory/" + filename
-
-                    # open the file and read through it
-                    f = open(new_path, "r")
-
-                    # we read all the lines in the file except the first 7 because they are not relevant
-                    file_text_lines = f.readlines()[6:]
-
-                    # if the file has more than 2500 lines (more than 2500 trackpoints) we skip that file to make sure that we do not proccess to much data
-                    if (len(file_text_lines) >= 2500):
-                        continue
-                    
-                    start_trackpoint: TrackPoint = None
-                    end_trackpoint: TrackPoint = None
-                    # for each line in the file we split the line by "," and create a new trackpoint object
-                    for line in file_text_lines:
-                        line = line.split(",")
-
-                        # we split the date and time attributes to combine them into a datetime object
-                        datesplit = line[5].split("-")
-                        timesplit = line[6].split(":")
-                        d = date(int(datesplit[0]), int(datesplit[1]), int(datesplit[2]))
-                        t = time(int(timesplit[0]), int(timesplit[1]), int(timesplit[2]))
-                        date_time = datetime.combine(d, t)
+                    # we split the date and time attributes to combine them into a datetime object
+                    datesplit = line[5].split("-")
+                    timesplit = line[6].split(":")
+                    d = date(int(datesplit[0]), int(datesplit[1]), int(datesplit[2]))
+                    t = time(int(timesplit[0]), int(timesplit[1]), int(timesplit[2]))
+                    date_time = datetime.combine(d, t)
 
 
                         # we create a new trackpoint object and append it to the track_points list
-                        track_point: TrackPoint = TrackPoint(new_activity.id, line[0], line[1], line[3], line[4], date_time)
-                        track_points.append((track_point.activity_id, track_point.lat, track_point.lon, track_point.altitude, track_point.date_days, track_point.date_time))
+                    track_point: TrackPoint = TrackPoint(new_activity.id, line[0], line[1], line[3], line[4], date_time)
+                    track_points.append((track_point.activity_id, track_point.lat, track_point.lon, track_point.altitude, track_point.date_days, track_point.date_time))
 
-                        # update the start tackpoint of the activity if the current trackpoint date_time is smaller than the start_trackpoint date_time
-                        if (start_trackpoint == None or track_point.date_time < start_trackpoint.date_time):
-                            start_trackpoint = track_point
+                    # update the start tackpoint of the activity if the current trackpoint date_time is smaller than the start_trackpoint date_time
+                    if (start_trackpoint == None or track_point.date_time < start_trackpoint.date_time):
+                        start_trackpoint = track_point
 
-                        # update the end trackpoint of the activity if the current trackpoint date_time is bigger than the end_trackpoint date_time
-                        if (end_trackpoint == None or track_point.date_time > end_trackpoint.date_time):
-                            end_trackpoint = track_point
+                    # update the end trackpoint of the activity if the current trackpoint date_time is bigger than the end_trackpoint date_time
+                    if (end_trackpoint == None or track_point.date_time > end_trackpoint.date_time):
+                         end_trackpoint = track_point
                     
-                    f.close()
+                f.close()
                     
                     
 
-                    new_activity.set_start_date_time(start_trackpoint.date_time)
-                    new_activity.set_end_date_time(end_trackpoint.date_time)
+                new_activity.set_start_date_time(start_trackpoint.date_time)
+                new_activity.set_end_date_time(end_trackpoint.date_time)
 
-                    if (new_user.hasLabel):
-                        for label in labels:
-                            if (new_activity.start_date_time == label.start_time and new_activity.end_date_time == label.end_time):
-                                new_activity.set_transportation_mode(label.mode_of_transportation)
-                                break
-                    activities.append((new_activity.id, new_activity.secondary_id, new_activity.user_id, new_activity.transportation_mode, new_activity.start_date_time, new_activity.end_date_time))
-
+                if (new_user.hasLabel):
+                    for label in labels:
+                        if (new_activity.start_date_time == label.start_time and new_activity.end_date_time == label.end_time):
+                            new_activity.set_transportation_mode(label.mode_of_transportation)
+                            break
+                activities.append((new_activity.id, new_activity.secondary_id, new_activity.user_id, new_activity.transportation_mode, new_activity.start_date_time, new_activity.end_date_time))
             self.addToDatabase(new_user, activities, track_points)
             print("Added user:" + str(i) + " to the database, with activites and trackpoints")
             print("---------------------------")
@@ -248,12 +246,6 @@ class PopulateDB:
         print("User table dropped")
         print("------------------------")
         self.connection.db_connection.commit()
-               
-    def present(self):
-         self.cursor.execute("SELECT * FROM trackpoint")
-         rows = self.cursor.fetchall()
-         for row in rows:
-            print(row)
 
 
 def main():

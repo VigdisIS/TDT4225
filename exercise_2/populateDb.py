@@ -99,7 +99,6 @@ class PopulateDB:
             print("Trackpoint table created")
             print("------------------------")
             self.db_connection.commit()
-        
     def walkFiles(self):
         # walk through all 181 folders with user date
         for i in range(0, 182):
@@ -154,7 +153,6 @@ class PopulateDB:
                         labels.append(new_label)
 
                 # go through each individual file in the files
-                print("Creating activities and trackpoints for user: " + str(i))
                 for filename in files:
                     # if the filename is labels.txt skip that file
                     if(filename == "labels.txt"):
@@ -212,11 +210,10 @@ class PopulateDB:
                     new_activity.set_start_date_time(start_trackpoint.date_time)
                     new_activity.set_end_date_time(end_trackpoint.date_time)
 
-
                     if (new_user.hasLabel):
                         for label in labels:
                             if (new_activity.start_date_time == label.start_time and new_activity.end_date_time == label.end_time):
-                                new_activity.set_transportation_mode(mode_of_transportation)
+                                new_activity.set_transportation_mode(label.mode_of_transportation)
                                 break
                     activities.append((new_activity.id, new_activity.secondary_id, new_activity.user_id, new_activity.transportation_mode, new_activity.start_date_time, new_activity.end_date_time))
 

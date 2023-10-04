@@ -2,8 +2,7 @@ from DbConnector import DbConnector
 import os
 from datetime import datetime, date, time
 import uuid
-
-
+from tabulate import tabulate
 
 base_path = "./data/dataset/Data/"
 
@@ -57,7 +56,39 @@ class PopulateDB:
         self.db_connection = self.connection.db_connection
         self.cursor = self.connection.cursor
     
+    def present(self):
+        print('USER TABLE:')
+        query = '''
+            select
+                *
+            from user
+            limit 10;
+        '''
+        self.cursor.execute(query)
+        result = self.cursor.fetchall()
+        print(tabulate(result))  
 
+        print('ACTIVITY TABLE:')
+        query = '''
+            select
+                *
+            from activity
+            limit 10;
+        '''
+        self.cursor.execute(query)
+        result = self.cursor.fetchall()
+        print(tabulate(result))  
+
+        print('TRACKPOINT TABLE:')
+        query = '''
+            select
+                *
+            from trackpoint
+            limit 10;
+        '''
+        self.cursor.execute(query)
+        result = self.cursor.fetchall()
+        print(tabulate(result))  
 
     def create_tables(self):
             user_query = """CREATE TABLE user (

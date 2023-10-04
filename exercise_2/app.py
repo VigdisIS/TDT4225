@@ -1,25 +1,22 @@
 from DbConnector import DbConnector
 from haversine import haversine, Unit
-from datetime import datetime
-from collections import defaultdict
 from tabulate import tabulate
 
 # TODO: Add comments to the code
 class Part2:
-
     def __init__(self):
         self.connection = DbConnector()
         self.db_connection = self.connection.db_connection
         self.cursor = self.connection.cursor
 
-    def present(self):
-        self.cursor.execute(query)
+    def present(self, task_query):
+        self.cursor.execute(task_query)
         result = self.cursor.fetchall()
-        print(tabulate(result))  
+        print(tabulate(result, headers=self.cursor.column_names))  
     
     def task1(self):
         print("Task 1:")
-        query = '''
+        return '''
             select
                 count(id) as number_of_trackpoints
             from trackpoint
@@ -32,14 +29,11 @@ class Part2:
                 count(id) as number_of_users
             from user;
             '''
-        self.cursor.execute(query)
-        result = self.cursor.fetchall()
-        print(tabulate(result))  
     
     def task2(self):
         print("Task 2:")
         # TODO: avg/min/max per user per activity or for all users?
-        query  = '''
+        return '''
             with total_trackpoints as (
             select
                 user.id as user_id,
@@ -57,13 +51,10 @@ class Part2:
                 min(total_trackpoints) as minimum_trackpoints
             from total_trackpoints;
             '''
-        self.cursor.execute(query )
-        result = self.cursor.fetchall()
-        print(tabulate(result, headers=self.cursor.column_names))  
 
     def task3(self):
         print("Task 3:")
-        query  = '''
+        return '''
             select 
                 user_id, 
                 count(user_id) as number_of_activities
@@ -71,26 +62,19 @@ class Part2:
             group by user_id 
             order by number_of_activities desc limit 15;
             '''
-        self.cursor.execute(query )
-        result = self.cursor.fetchall()
-        print(tabulate(result, headers=self.cursor.column_names))  
 
     def task4(self):
         print("Task 4:")
-        query = '''
+        return '''
             select distinct
                 user_id
             from activity
             where transportation_mode = 'bus';
             '''
-        self.cursor.execute(query)
-        result = self.cursor.fetchall()
-        print(tabulate(result, headers=self.cursor.column_names))  
 
     def task5(self):
         print("Task 5:")
-        # query = "SELECT user_id, COUNT(DISTINCT transportation_mode), COUNT(transportation_mode) FROM activity GROUP BY user_id";
-        query = '''
+        return '''
             select 
                 user_id,
                 count(distinct transportation_mode) as distinct_transportation_modes
@@ -98,14 +82,11 @@ class Part2:
             group by user_id
             order by distinct_transportation_modes desc limit 10;
             '''
-        self.cursor.execute(query)
-        result = self.cursor.fetchall()
-        print(tabulate(result, headers=self.cursor.column_names))  
     
     def task6(self):
         # TODO: what is meant by activity? I.e. distinct activity ids?
         print("Task 6:")
-        query = '''
+        return '''
             select 
                 id, 
                 count(*)
@@ -113,25 +94,20 @@ class Part2:
             group by id
             having count(*) > 1;
             '''
-        self.cursor.execute(query)
-        result = self.cursor.fetchall()
-        print(tabulate(result, headers=self.cursor.column_names))  
     
-    def task7(self):
+    def task7_a(self):
         print("Task 7:")
         print("a)")
-        query = '''
+        return '''
             select
                 count(distinct user_id) as users
             from activity
             where datediff(start_date_time, end_date_time) != 0;
             '''
-        self.cursor.execute(query)
-        result = self.cursor.fetchall()
-        print(tabulate(result, headers=self.cursor.column_names))  
-        
+    
+    def task7_b(self):
         print("b)")
-        query = '''
+        return '''
             select
                 user_id,
                 transportation_mode,
@@ -139,9 +115,6 @@ class Part2:
             from activity
             where datediff(start_date_time, end_date_time) != 0;
             '''
-        self.cursor.execute(query)
-        result = self.cursor.fetchall()
-        print(tabulate(result, headers=self.cursor.column_names))  
 
     def task8(self):
         # TODO: try and optimalize by utlizing temporary tables
@@ -183,7 +156,7 @@ class Part2:
 
     def task9(self):
         print("Task 9:")
-        query = '''
+        return '''
             with total_increase_per_activity as (
                 select 
                     activity_id,
@@ -214,9 +187,6 @@ class Part2:
             group by user_id
             order by sum(total_increase) desc limit 15;
             '''
-        self.cursor.execute(query)
-        result = self.cursor.fetchall()
-        print(tabulate(result, headers=self.cursor.column_names))
 
     def task10(self):
         print("Task 10:")
@@ -278,7 +248,7 @@ class Part2:
                 '''
             self.cursor.execute(insert_query)
 
-        select_query = '''
+        return '''
             with temp as (
                 select 
                     t1.transportation_mode,
@@ -304,15 +274,10 @@ class Part2:
             from temp
             where row_num = 1
         '''
-        self.cursor.execute(select_query)
-        # Fetch all rows from the result of the SELECT query
-        result = self.cursor.fetchall()
-        print(tabulate(result, headers=self.cursor.column_names))
         
     def task11(self):
-        # Select all activity_ids
         print("Task 11:")
-        query = '''
+        return '''
         with prev_timestamp_per_activity as (
             select 
                 activity_id,
@@ -336,13 +301,10 @@ class Part2:
         from invalid_activities_count
         group by user_id
         '''
-        self.cursor.execute(query)
-        result = self.cursor.fetchall()
-        print(tabulate(result, headers=self.cursor.column_names))
 
     def task12(self):
         print("Task 12:")
-        query = '''
+        return '''
             with most_used_transportation_mode as (
                 select 
                     user_id, 
@@ -371,26 +333,24 @@ class Part2:
             from most_used_transportation_mode
             order by user_id asc;
         '''
-        self.cursor.execute(query)
-        result = self.cursor.fetchall()
-        print(tabulate(result, headers=self.cursor.column_names))
 
 def main():
     program = None
     try:
         program = Part2()
-        # program.task1()
-        # program.task2()
-        # program.task3()
-        # program.task4()
-        # program.task5()
-        # program.task6()
-        # program.task7()
-        # program.task8()
-        # program.task9()
-        # program.task10()
-        # program.task11()
-        # program.task12()
+        #program.present(program.task1())
+        #program.present(program.task2())
+        # program.present(program.task3())
+        # program.present(program.task4())
+        #program.present(program.task5())
+        #program.present(program.task6())
+        #program.present(program.task7_a())
+        #program.present(program.task7_b())
+        #program.present(program.task8())
+        #program.present(program.task9())
+        #program.present(program.task10())
+        program.present(program.task11())
+        #program.present(program.task12())
     except Exception as e:
         print("ERROR: Failed to use database:", e)
     finally:

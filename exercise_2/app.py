@@ -337,9 +337,8 @@ class Part2:
         group by user_id
         '''
         self.cursor.execute(query)
-        rows = self.cursor.fetchall()
-        for row in rows:
-            print(row)
+        result = self.cursor.fetchall()
+        print(tabulate(result, headers=self.cursor.column_names))
 
     def task12(self):
         print("Task 12:")
@@ -373,9 +372,8 @@ class Part2:
             order by user_id asc;
         '''
         self.cursor.execute(query)
-        rows = self.cursor.fetchall()
-        for row in rows:
-            print(row)
+        result = self.cursor.fetchall()
+        print(tabulate(result, headers=self.cursor.column_names))
 
 def main():
     program = None

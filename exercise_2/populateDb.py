@@ -66,7 +66,7 @@ class PopulateDB:
         '''
         self.cursor.execute(query)
         result = self.cursor.fetchall()
-        print(tabulate(result))  
+        print(tabulate(result, headers=self.cursor.column_names))
 
         print('ACTIVITY TABLE:')
         query = '''
@@ -77,7 +77,7 @@ class PopulateDB:
         '''
         self.cursor.execute(query)
         result = self.cursor.fetchall()
-        print(tabulate(result))  
+        print(tabulate(result, headers=self.cursor.column_names))  
 
         print('TRACKPOINT TABLE:')
         query = '''
@@ -88,7 +88,7 @@ class PopulateDB:
         '''
         self.cursor.execute(query)
         result = self.cursor.fetchall()
-        print(tabulate(result))  
+        print(tabulate(result, headers=self.cursor.column_names))  
 
     def create_tables(self):
             user_query = """CREATE TABLE user (

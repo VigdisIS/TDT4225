@@ -325,7 +325,7 @@ class Part2:
             from activity
             left join trackpoint 
                 on activity.id = trackpoint.activity_id
-            where transportation_mode is not null
+            where transportation_mode is not null;
             '''
         self.cursor.execute(query)
         activities = self.cursor.fetchall()
@@ -372,7 +372,7 @@ class Part2:
             create temporary table activity_distance_temp (
                 activity_id varchar(255),
                 value float
-            )
+            );
             '''
         self.cursor.execute(create_temp_table_query)
 
@@ -385,7 +385,7 @@ class Part2:
                 ) values (
                     '{activity_id}', 
                     {value}
-                )
+                );
                 '''
             self.cursor.execute(insert_query)
 
@@ -423,7 +423,7 @@ class Part2:
                 timestampdiff(hour, start_date_time, end_date_time) as duration,
                 value
             from temp
-            where row_num = 1
+            where row_num = 1;
         '''
         
     def task11(self):
@@ -460,7 +460,7 @@ class Part2:
             user_id,
             count(activity_id) as "number of invalid activities"
         from invalid_activities_count
-        group by user_id
+        group by user_id;
         '''
 
     def task12(self):

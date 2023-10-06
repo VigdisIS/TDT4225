@@ -16,13 +16,20 @@ class User:
 
 class Activity:
     def __init__(self, id, user_id):
+        # we create the id manually because it is needed to create the trackpoint table
         self.id = str(uuid.uuid4())
+        # secondary_id references the filename of the activity
         self.secondary_id = id
+        # user_id is a foreign key to the user table
         self.user_id = user_id
+        # transportation mode is defined in the labels.txt file
         self.transportation_mode = None
+        # start_date_time and end_date_time are the start and end time of the activity
         self.start_date_time = None
         self.end_date_time = None
     
+
+    # setters for the activity class as these attributes are initalized as None
     def set_transportation_mode(self, transport_mode):
         self.transportation_mode = transport_mode
     
@@ -34,14 +41,20 @@ class Activity:
 
 class TrackPoint:
     def __init__(self, activity_id, lat, lon, altitude, date_days, date_time):
+        # the trackpoint object does not have an id as it is created automatically by the MySQL database
+        
+        # activity_id is a foreign key to the activity table
         self.activity_id = activity_id
+        # lat, lon and altitude are the coordinates of the trackpoint
         self.lat = lat
         self.lon = lon
         self.altitude = altitude
+        # date_days and date_time are the date and time of the trackpoint
         self.date_days = date_days
         self.date_time = date_time
     
 
+# the label class is created to make it easier to read the labels.txt file and added the information to the activities. 
 class Label:
     def __init__(self, start_time, end_time, mode_of_transportation):
         self.start_time = start_time
@@ -49,13 +62,18 @@ class Label:
         self.mode_of_transportation = mode_of_transportation
 
 
+# this clases is separated from the app.py file for two reasons
+# 1. to make the code more readable
+# 2. to make it easier to reset the database and populate it again
 class PopulateDB:
 
+    # initialize the database connection and cursor
     def __init__(self):
         self.connection = DbConnector()
         self.db_connection = self.connection.db_connection
         self.cursor = self.connection.cursor
     
+    # present all the tables in the database for the raport
     def present(self):
         print('USER TABLE:')
         query = '''
@@ -90,11 +108,16 @@ class PopulateDB:
         result = self.cursor.fetchall()
         print(tabulate(result, headers=self.cursor.column_names))  
 
+
+    # create the tables in the database
     def create_tables(self):
+            # query for the user table
             user_query = """CREATE TABLE user (
                     id INTEGER PRIMARY KEY,
                     has_labels BOOLEAN
                     )"""
+            
+            # query for the activity table with foreign key to the user table
             activity_query = """
                     CREATE TABLE activity (
                     id VARCHAR(100) PRIMARY KEY,
@@ -105,6 +128,7 @@ class PopulateDB:
                     start_date_time DATETIME,
                     end_date_time DATETIME
                     )"""
+            # query for the trackpoint table with foreign key to the activity table
             trackpoint_query = """
                     CREATE TABLE trackpoint (
                     id INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -131,11 +155,18 @@ class PopulateDB:
             print("------------------------")
             self.db_connection.commit()
 
+    # walk through all the files in the dataset and add them to the database
+    # this function is separated from the create_tables and reset functions because 
+    # we want the creation and reset of the database to be separate from the population of the database
+    # to make it easier to debug 
     def walkFiles(self):
         # walk through all 181 folders with user date
+        # Hardcoding the range to 182 would not be a good practice in any other 
+        # scenario but given that we know that there are 182 folders with user data we can do it in this case
         for i in range(0, 182):
-            # for each folder create a new user
+            # for each folder create a new user as each folder represent the user data
             print("User: " + str(i))
+
             new_user = User(i)
             # add the correct start to the path of the folder based on the user id
             if i < 10:
@@ -145,25 +176,41 @@ class PopulateDB:
             else:
                 path = base_path + str(i)
 
-            # initialize empty folder for track_points and activities for the user
+            # initialize empty list for track_points, activities and labels
             track_points = []
             activities = []
+
+            # the reason for having a labels list is that we only want to go trough the labels.txt file once
+            # and then iterate through the list when we are adding the labels to the activities
             labels = []
-            # walk through all the files inside that folder
+            
+            # check if the user folder contains a lables.txt file
+            # there is also a labeled_ids.txt file but it seemed to not be needed as checking which users are in that file and 
+            # adding them to a list would be the same as checking if the folder contains a labels.txt file
             if os.listdir(path).__contains__("labels.txt"):
+                # if the folder contains a labels.txt file we set the user hasLabel to true
+                # this is to make sure that we only search for labels to activities when the user data is labeled
                 new_user.setHasLabel(True)
+                # we set the path to the labels.txt file
                 label_path = path + "/labels.txt"
+
+                # open the labels.txt file and read through every line except the first line as it is not relevant
                 f = open(label_path, "r")
                 label_path_lines = f.readlines()[1:]
+
                 for line in label_path_lines:
+                    # we replace the "\n" and "\t" with " " and then split the line by " " to get the different attributes
                     split_line = line.replace("\n", "").replace("\t", " ").split(" ")
+                    # we split the date and time attributes to combine them into a datetime object
                     start_datesplit = split_line[0].split("/")
                     start_timesplit = split_line[1].split(":")
+                    # we create a new datetime object with the date and time attributes
                     d_start = date(int(start_datesplit[0]), int(start_datesplit[1]), int(start_datesplit[2]))
                     t_start = time(int(start_timesplit[0]), int(start_timesplit[1]), int(start_timesplit[2]))
-
+                    # we combine the date and time attributes into a datetime object
                     start_datetime = datetime.combine(d_start, t_start)
-                            
+
+                    # we do the same for the end date and time attributes        
                     end_datesplit = split_line[2].split("/")
                     end_timesplit = split_line[3].split(":")
 
@@ -172,6 +219,7 @@ class PopulateDB:
 
                     end_datetime = datetime.combine(d_end, t_end)
 
+                    # we create a new label object and append it to the labels list
                     mode_of_transportation = split_line[4]
 
                     new_label: Label = Label(start_datetime, end_datetime, mode_of_transportation)
@@ -179,19 +227,21 @@ class PopulateDB:
                     labels.append(new_label)
 
 
-                # if the folder contains a labels.txt file, set the user hasLabel to true
-                # this is to make sure that we only search for labels to activities when the user data is labeled
-                    
-
-                # go through each individual file in the files
+            # go through each individual file in the Trajectory folder
             for filename in os.listdir(path + "/Trajectory"):
                 # if the filename is labels.txt skip that file
+                # we do this because we only want to add the labels to the activities and not the labels.txt file
+                # this is not really necessary because the labels.txt file is outside 
+                # of the Trajectory folder but is done just in case
                 if(filename == "labels.txt"):
                         continue
+                
                 # set the id of the activity to the filename
                 new_id = filename.split(".")[0]
 
-                # initialize a new activity object
+                # initialize a new activity object with the id and user_id
+                # the activity object is initialized with id = uuid() and the new_id in this case 
+                # refers to the secondary_id of the activity
                 new_activity = Activity(new_id, i)
 
                 # set the path of the file that we are currently looking at
@@ -206,10 +256,13 @@ class PopulateDB:
                 # if the file has more than 2500 lines (more than 2500 trackpoints) we skip that file to make sure that we do not proccess to much data
                 if (len(file_text_lines) >= 2500):
                     continue
-                    
+                
+                # when iterating through all trackpoints we keep track of the first and last trackpoint
+                # because their datetime represent the start and end of the activity
                 start_trackpoint: TrackPoint = None
                 end_trackpoint: TrackPoint = None
-                # for each line in the file we split the line by "," and create a new trackpoint object
+
+                # for each line in the file we split the line by "," to get the different attributes
                 for line in file_text_lines:
                     line = line.split(",")
 
@@ -221,8 +274,10 @@ class PopulateDB:
                     date_time = datetime.combine(d, t)
 
 
-                        # we create a new trackpoint object and append it to the track_points list
+                    # we create a new trackpoint object and append it to the track_points list
+                    # we skip the 2nd attribute in the line because it is not relevant
                     track_point: TrackPoint = TrackPoint(new_activity.id, line[0], line[1], line[3], line[4], date_time)
+                    # we append the trackpoint to the track_points list
                     track_points.append((track_point.activity_id, track_point.lat, track_point.lon, track_point.altitude, track_point.date_days, track_point.date_time))
 
                     # update the start tackpoint of the activity if the current trackpoint date_time is smaller than the start_trackpoint date_time
@@ -232,38 +287,51 @@ class PopulateDB:
                     # update the end trackpoint of the activity if the current trackpoint date_time is bigger than the end_trackpoint date_time
                     if (end_trackpoint == None or track_point.date_time > end_trackpoint.date_time):
                          end_trackpoint = track_point
-                    
+                
                 f.close()
                     
                     
-
+                # when when have gone through all the trackpoints we set the start and end date_time of the activity
                 new_activity.set_start_date_time(start_trackpoint.date_time)
                 new_activity.set_end_date_time(end_trackpoint.date_time)
 
+                # if the user has labels we iterate through the labels list to find the label that matches the start and end date_time of the activity
+                # if the label matches we add the transportation mode to the activity
                 if (new_user.hasLabel):
                     for label in labels:
                         if (new_activity.start_date_time == label.start_time and new_activity.end_date_time == label.end_time):
                             new_activity.set_transportation_mode(label.mode_of_transportation)
                             break
+                # we append the activity to the activities list
                 activities.append((new_activity.id, new_activity.secondary_id, new_activity.user_id, new_activity.transportation_mode, new_activity.start_date_time, new_activity.end_date_time))
+           
+            # when we have gone through all the files in the Trajectory folder we add the user, activities and trackpoints to the database
             self.addToDatabase(new_user, activities, track_points)
             print("Added user:" + str(i) + " to the database, with activites and trackpoints")
             print("---------------------------")
             
    
     def addToDatabase(self,user: User, activities: list[Activity], trackpoints: list[TrackPoint]):
+        # add one user to the database
         add_user = ''' INSERT INTO user(id,has_labels)
               VALUES(%s,%s) '''
         self.cursor.execute(add_user, (user.id, user.hasLabel))
+
+        # add all the activities and trackpoints to the database with executemany
         add_activity = ''' INSERT INTO activity(id,secondary_id,user_id,transportation_mode,start_date_time,end_date_time)
               VALUES(%s,%s,%s,%s,%s,%s) '''
         self.cursor.executemany(add_activity, activities)
+
+        # add all the trackpoints to the database with executemany
         add_trackpoint = ''' INSERT INTO trackpoint(activity_id,lat,lon,altitude,date_days,date_time)
               VALUES(%s,%s,%s,%s,%s,%s) '''
         self.cursor.executemany(add_trackpoint, trackpoints)
         self.db_connection.commit()
 
+
+    # this function drops all tables in the database to reset it
     def reset(self):
+
         print("Dropping trackpoint table")  
         self.cursor.execute("DROP TABLE IF EXISTS trackpoint")
         print("Trackpoint table dropped")

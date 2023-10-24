@@ -102,6 +102,9 @@ class App:
               }}
         ]))        
 
+        # TODO: The task might be asking for how many activities that are
+        # tagged per transportation mode, not total (?)
+        
         result1 = list(activities.aggregate([
                 { "$match": {
                     "transportation_mode": {"$ne": None}
@@ -122,8 +125,7 @@ class App:
         print("-----------------------")
 
     def task_6(self):
-        print("Task 6")
-
+        print("Task 6 a)")
 
         activities = self.db["activities"]
         result = list(activities.aggregate([
@@ -131,9 +133,18 @@ class App:
                 "_id": {"$substr": ["$start_date_time", 0, 4]},
                 "count": {"$sum": 1}
             }},
+            {"$sort": {"count": -1}},
+            {"$limit": 1}
         ]))
 
         pprint(result)
+
+        print("-----------------------")
+
+        print("Task 6 b)")
+        # TODO: Sum all recorded hours for each activity for each year
+        # and check if the year from a) is the same as the year with the
+        # most recorded hours
 
         print("-----------------------")
 
@@ -328,16 +339,16 @@ def main():
     program = None
     try:
         program = App()
-        # program.task_1()
-        # program.task_2()
-        # program.task_3()
-        # program.task_4()
-        # program.task_5()
-        # program.task_6()
-        # program.task_7()
-        # program.task_8()
+        program.task_1()
+        program.task_2()
+        program.task_3()
+        program.task_4()
+        program.task_5()
+        program.task_6()
+        program.task_7()
+        program.task_8()
         # program.task_9()
-        # program.task_10()
+        program.task_10()
         program.task_11()
     except Exception as e:
         print("ERROR: Failed to use database:", e)

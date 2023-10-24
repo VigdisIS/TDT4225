@@ -2,18 +2,21 @@ import datetime
 from DbConnector import DbConnector
 from pprint import pprint 
 from haversine import haversine
+from bson.son import SON
+
+# TODO: Add comments to tasks where this is missing
+# TODO: Check that the output of each task is what the assignment asks for
 
 class App:
-
     # initialize the database connection and cursor
     def __init__(self):
         self.connection = DbConnector()
         self.client = self.connection.client
         self.db = self.connection.db
 
-
     def removeTime(self, time):
         return (datetime.datetime.isoformat(time))
+    
     def task_1(self):
         print("Task 1")
 
@@ -69,6 +72,7 @@ class App:
         ]))
 
         pprint(result)
+
     def task_4(self):
         print("Task 4")
         print("-----------------------")
@@ -114,7 +118,6 @@ class App:
         
         pprint(result2)
         pprint(result1)
-
         
         print("-----------------------")
 
@@ -131,6 +134,7 @@ class App:
         ]))
 
         pprint(result)
+
         print("-----------------------")
 
     def task_7(self):
@@ -164,6 +168,7 @@ class App:
                 total_distance += haversine((float(trackpoints[i]['lat']), float(trackpoints[i]['lon'])), (float(trackpoints[i+1]['lat']), float(trackpoints[i+1]['lon'])))
 
         print(f'Total distance: {total_distance} km')
+
         print("-----------------------")
     
     def task_8(self):
@@ -274,66 +279,71 @@ class App:
         ]))
 
         pprint(result)
-    
+
         print("-----------------------")
 
     def task_11(self):
         print("Task 11")
-        activities = self.db["activities"]
 
+        activities = self.db["activities"]
         result = list(activities.aggregate([
-             { "$match": {
-                    "transportation_mode": {"$ne": None}
-                }},
-        {
-            "$group": {
-            "_id": {
-                "transport_mode": "$transport_mode",
-                "user_id": "$user_id"
-            },
-            "count": {
-                "$sum": 1
-            },
-               "transport_mode": "$transport_mode",
-            }
-        },
-        {
-            "$sort": {
-            "count": -1
-            }
-        },
+            # Fetch all activities that have a transportation mode registered
+            {"$match": {
+                "transportation_mode": {"$ne": None}
+            }},
+            # Group by user_id to get all unique users and their 
+            # transportation modes
+            {"$group": {
+                "_id": "$user_id",
+                "transportation_modes": {"$push": "$transportation_mode"}
+            }},
+            # Unwind the transportation_modes array to get a document for each
+            # transportation mode
+            {"$unwind": "$transportation_modes"},
+            # Group by user_id and transportation_mode to get the number of
+            # occurrences of each transportation mode for each user
+            {"$group": {
+                "_id": {
+                    "user_id": "$_id",
+                    "transportation_mode": "$transportation_modes"
+                },
+                "count": {"$sum": 1} 
+            }},
+            # Sort by count in descending order and then by user_id in 
+            # descending order
+            {"$sort": SON([("count", -1), ("_id", -1)])},
+            # Group by user_id to get the most used transportation mode for
+            # each user
+            {"$group": {
+                "_id": "$_id.user_id",
+                "most_used_transportation_mode": {"$first": "$_id.transportation_mode"} # Get the first element in the sorted array
+            }}
         ]))
 
         pprint(result)
 
         print("-----------------------")
-    
-    
-
-
-
 
 def main():
     program = None
     try:
         program = App()
-        program.task_1()
-        program.task_2()
-        program.task_3()
-        program.task_4()
-        program.task_5()
-        program.task_6()
-        program.task_7()
-        program.task_8()
+        # program.task_1()
+        # program.task_2()
+        # program.task_3()
+        # program.task_4()
+        # program.task_5()
+        # program.task_6()
+        # program.task_7()
+        # program.task_8()
         # program.task_9()
-        program.task_10()
+        # program.task_10()
         program.task_11()
     except Exception as e:
         print("ERROR: Failed to use database:", e)
     finally:
         if program:
             program.connection.close_connection()
-
 
 if __name__ == '__main__':
     main()

@@ -256,6 +256,71 @@ class App:
     def task_9(self):
         print("Task 9")
         # TODO: Implement this
+        trackpoints = self.db["trackpoints"]
+        
+        result = list(trackpoints.aggregate([
+    {
+        #
+        "$sort": { "date_time": 1 }
+    },
+    {
+    #
+        "$group": {
+            "_id": "$activity_id",
+            "date_times": { "$push": "$date_time" }
+        }
+    },
+    {
+        #
+        "$project": {
+            "gaps": {
+                "$map": {
+                    "input": { "$range": [0, { "$subtract": [{ "$size": "$date_times" }, 1] }] },
+                    "as": "idx",
+                    "in": {
+                        "$subtract": [
+                            { "$arrayElemAt": ["$date_times", { "$add": ["$$idx", 1] }] },
+                            { "$arrayElemAt": ["$date_times", "$$idx"] }
+                        ]
+                    }
+                }
+            }
+        }
+    },
+    {
+        #
+        "$match": {
+            "gaps": {
+                "$elemMatch": { "$gte": 300000 }  #5 minutes in milliseconds (60 * 5  * 1000)
+            }
+        }
+    },
+    {
+        # Group by user_id and count their invalid activities
+        "$group": {
+            "_id": "$_id",
+        }
+    }, 
+            # Join trackpoints and activities collections on activity_id to 
+            # extract the user_id for each activity, since we want to count
+            # the number of invalid activities for each user
+   {"$lookup": {
+                "from": "activities",
+                "localField": "_id",
+                "foreignField": "_id",
+                "as": "activity_info"
+            }},
+             # Unwind the activity_info array to get a document for each 
+            # activity
+                {"$unwind": "$activity_info"},
+                
+            # Group by user_id to get all unique users that have invalid activities
+            {"$group": {  "_id": "$activity_info.user_id", "count": {"$sum": 1}}}
+]))
+        
+        
+
+        pprint(result)
         print("-----------------------")
     
     def task_10(self):
@@ -339,17 +404,17 @@ def main():
     program = None
     try:
         program = App()
-        program.task_1()
-        program.task_2()
-        program.task_3()
-        program.task_4()
-        program.task_5()
-        program.task_6()
-        program.task_7()
-        program.task_8()
-        # program.task_9()
-        program.task_10()
-        program.task_11()
+        #program.task_1()
+        #program.task_2()
+        #program.task_3()
+        #program.task_4()
+        #program.task_5()
+        #program.task_6()
+        #program.task_7()
+        #program.task_8()
+        program.task_9()
+       # program.task_10()
+       # program.task_11()
     except Exception as e:
         print("ERROR: Failed to use database:", e)
     finally:

@@ -157,7 +157,7 @@ class PopulateDB:
                     # we create a new label object and append it to the labels list
                     mode_of_transportation = split_line[4]
 
-                    new_label: Label = Label(start_datetime_str, end_datetime_string, mode_of_transportation)
+                    new_label: Label = Label(start_datetime, end_datetime, mode_of_transportation)
 
                     labels.append(new_label)
 
@@ -211,7 +211,7 @@ class PopulateDB:
 
                     # we create a new trackpoint object and append it to the track_points list
                     # we skip the 2nd attribute in the line because it is not relevant
-                    track_point: TrackPoint = TrackPoint(new_activity.id, line[0], line[1], line[3], line[4], date_time_str)
+                    track_point: TrackPoint = TrackPoint(new_activity.id, line[0], line[1], line[3], line[4], date_time)
                     # we append the trackpoint to the track_points list
                     track_points.append(track_point.toJson())
 

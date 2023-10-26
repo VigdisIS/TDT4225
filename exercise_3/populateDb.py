@@ -1,9 +1,8 @@
-import json
 from DbConnector import DbConnector
 import os
 from datetime import datetime, date, time
 import uuid
-from tabulate import tabulate
+from pprint import pprint 
 
 base_path = "./data/dataset/Data/"
 
@@ -81,10 +80,29 @@ class PopulateDB:
         self.client = self.connection.client
         self.db = self.connection.db
     
-    # present all the tables in the database for the raport
+    # present top 10 rows from each collection in the database for the report
     def present(self):
-        # TODO
-        print("present")
+        print("Users collection:")
+        print("-----------------------")
+        users = self.db["users"]
+        users = users.find().limit(10)
+        for el in users:
+            pprint(el)
+
+        print("Activities collection:")
+        print("-----------------------")
+        activities = self.db["activities"]
+        activities = activities.find().limit(10)
+        for el in activities:
+            pprint(el)
+
+        print("Trackpoints collection:")
+        print("-----------------------")
+        trackpoints = self.db["trackpoints"]
+        trackpoints = trackpoints.find().limit(10)
+        for el in trackpoints:
+            pprint(el)
+
         return
   
 

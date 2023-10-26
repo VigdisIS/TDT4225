@@ -3,6 +3,7 @@ from DbConnector import DbConnector
 from pprint import pprint 
 from haversine import haversine
 from bson.son import SON
+import datetime
 
 # TODO: Add comments to tasks where this is missing
 # TODO: Check that the output of each task is what the assignment asks for
@@ -19,11 +20,10 @@ class App:
     
     def task_1(self):
         print("Task 1")
+        # TODO: Add comments
 
-        print("user")
         user = self.db["users"]
         user_count = user.count_documents({})
-        print("user after")
         activities = self.db.activities
         activity_col_count = activities.count_documents({})
 
@@ -38,85 +38,84 @@ class App:
     
     def task_2(self):
         print("Task 2")
+        # TODO: Add comments
 
         activities = self.db["activities"]
         result = list(activities.aggregate([
-              { "$group": {
-        "_id": "$user_id",
-        "count": { "$sum": 1 }
-              }},
-              {"$group": {
+            {"$group": {
+                "_id": "$user_id",
+                "count": { "$sum": 1 }
+            }},
+            {"$group": {
                 "_id": None,
-               "avarage_activity": {"$avg": "$count"}}
-              }
+                "avarage_activity": {"$avg": "$count"}
+            }}
         ]))
 
-        print(result[0]["avarage_activity"])
+        print("Average number of activities per user: ", result[0]["avarage_activity"])
         print("-----------------------")
 
     def task_3(self):
         print("Task 3")
+        # TODO: Add comments
         print("-----------------------")
         
         activities = self.db["activities"]
 
         result = list(activities.aggregate([
-              { "$group": {
-        "_id": "$user_id",
-        "count": { "$sum": 1 }
-              }},
-              {"$sort": { "count": -1}
-              },
-              {"$limit": 20}
-
+            { "$group": {
+                "_id": "$user_id",
+                "count": { "$sum": 1 }
+            }},
+            {"$sort": { "count": -1}},
+            {"$limit": 20}
         ]))
 
         pprint(result)
 
     def task_4(self):
         print("Task 4")
+        # TODO: Add comments
         print("-----------------------")
         activities = self.db["activities"]
         result = list(activities.aggregate([
-              { "$match": {
-                  "transportation_mode": "taxi"
-              }},
-              {"$group": {
-                  "_id": "$user_id",
-                  "transportation_mode": {"$first": "$transportation_mode"},
-              }}
-              ]))
+            { "$match": {
+                "transportation_mode": "taxi"
+            }},
+            {"$group": {
+                "_id": "$user_id",
+                "transportation_mode": {"$first": "$transportation_mode"},
+            }}
+            ]))
 
         pprint(result)
 
     def task_5(self):
         print("Task 5")
+        # TODO: Add comments
         activities = self.db["activities"]
 
         result2 = list(activities.aggregate([
-                { "$match": {
-                    "transportation_mode": {"$ne": None}
-                }},
-                {"$group": {
-                  "_id": "$transportation_mode",
-              }}
-        ]))        
-
-        # TODO: The task might be asking for how many activities that are
-        # tagged per transportation mode, not total (?)
+            { "$match": {
+                "transportation_mode": {"$ne": None}
+            }},
+            {"$group": {
+              "_id": "$transportation_mode",
+          }}
+        ]))
         
         result1 = list(activities.aggregate([
-                { "$match": {
-                    "transportation_mode": {"$ne": None}
-                }},
-                {"$group": {
-                  "_id": "$user_id",
-                  "count": { "$sum": 1 }
-              }},
-              {"$group": {
-                "_id": None,
-               "total_activities": {"$sum": "$count"}}
-              }
+            { "$match": {
+                "transportation_mode": {"$ne": None}
+            }},
+            {"$group": {
+              "_id": "$user_id",
+              "count": { "$sum": 1 }
+          }},
+          {"$group": {
+            "_id": None,
+           "total_activities": {"$sum": "$count"}}
+          }
         ]))
         
         pprint(result2)
@@ -126,6 +125,7 @@ class App:
 
     def task_6(self):
         print("Task 6 a)")
+        # TODO: Add comments
 
         activities = self.db["activities"]
         result = list(activities.aggregate([
@@ -158,7 +158,13 @@ class App:
             {"$match": {
                 "user_id": 112,
                 "transportation_mode": "walk",
-                'start_date_time': {'$regex':'^2008'}
+                # Check that the start_date_time is between 2008-01-01 and
+                # 2009-01-01 using the $gte and $lt operators, which are
+                # equivalent to >= and <
+                "start_date_time": {
+                    "$gte": datetime.datetime(2008, 1, 1),
+                    "$lt": datetime.datetime(2009, 1, 1)
+                }
             }},
             {"$lookup": {
                 "from": "trackpoints",
@@ -255,7 +261,56 @@ class App:
     
     def task_9(self):
         print("Task 9")
-        # TODO: Implement this
+        # TODO: Add comments
+        trackpoints = self.db["trackpoints"]
+        
+        result = list(trackpoints.aggregate([
+            {"$sort": {"date_time": 1}
+            },
+            {"$group": {
+                "_id": "$activity_id",
+                "date_times": {"$push": "$date_time"}
+            }},
+            {"$project": {
+                "gaps": {
+                    "$map": {
+                        "input": {"$range": [0, {"$subtract": [{"$size": "$date_times"}, 1]}]},
+                        "as": "idx",
+                        "in": {
+                            "$subtract": [
+                                {"$arrayElemAt": ["$date_times", {"$add": ["$$idx", 1]}]},
+                                {"$arrayElemAt": ["$date_times", "$$idx"]}
+                            ]
+                        }
+                    }
+                }
+            }},
+            {"$match": {
+                "gaps": {
+                    "$elemMatch": {"$gte": 300000}  #5 minutes in milliseconds (60 * 5  * 1000)
+                }
+            }},
+            # Group by user_id and count their invalid activities
+            {"$group": {
+                "_id": "$_id",
+            }}, 
+            # Join trackpoints and activities collections on activity_id to 
+            # extract the user_id for each activity, since we want to count
+            # the number of invalid activities for each user
+            {"$lookup": {
+                "from": "activities",
+                "localField": "_id",
+                "foreignField": "_id",
+                "as": "activity_info"
+            }},
+            # Unwind the activity_info array to get a document for each 
+            # activity
+            {"$unwind": "$activity_info"},
+            # Group by user_id to get all unique users that have invalid activities
+            {"$group": {  "_id": "$activity_info.user_id", "count": {"$sum": 1}}}
+            ]))
+        
+        pprint(result)
         print("-----------------------")
     
     def task_10(self):
@@ -347,7 +402,7 @@ def main():
         program.task_6()
         program.task_7()
         program.task_8()
-        # program.task_9()
+        program.task_9()
         program.task_10()
         program.task_11()
     except Exception as e:

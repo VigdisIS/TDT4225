@@ -1,9 +1,8 @@
-import json
 from DbConnector import DbConnector
 import os
 from datetime import datetime, date, time
 import uuid
-from tabulate import tabulate
+from pprint import pprint 
 
 base_path = "./data/dataset/Data/"
 
@@ -81,10 +80,29 @@ class PopulateDB:
         self.client = self.connection.client
         self.db = self.connection.db
     
-    # present all the tables in the database for the raport
+    # present top 10 rows from each collection in the database for the report
     def present(self):
-        # TODO
-        print("present")
+        print("Users collection:")
+        print("-----------------------")
+        users = self.db["users"]
+        users = users.find().limit(10)
+        for el in users:
+            pprint(el)
+
+        print("Activities collection:")
+        print("-----------------------")
+        activities = self.db["activities"]
+        activities = activities.find().limit(10)
+        for el in activities:
+            pprint(el)
+
+        print("Trackpoints collection:")
+        print("-----------------------")
+        trackpoints = self.db["trackpoints"]
+        trackpoints = trackpoints.find().limit(10)
+        for el in trackpoints:
+            pprint(el)
+
         return
   
 
@@ -157,7 +175,7 @@ class PopulateDB:
                     # we create a new label object and append it to the labels list
                     mode_of_transportation = split_line[4]
 
-                    new_label: Label = Label(start_datetime_str, end_datetime_string, mode_of_transportation)
+                    new_label: Label = Label(start_datetime, end_datetime, mode_of_transportation)
 
                     labels.append(new_label)
 
@@ -211,7 +229,7 @@ class PopulateDB:
 
                     # we create a new trackpoint object and append it to the track_points list
                     # we skip the 2nd attribute in the line because it is not relevant
-                    track_point: TrackPoint = TrackPoint(new_activity.id, line[0], line[1], line[3], line[4], date_time_str)
+                    track_point: TrackPoint = TrackPoint(new_activity.id, line[0], line[1], line[3], line[4], date_time)
                     # we append the trackpoint to the track_points list
                     track_points.append(track_point.toJson())
 

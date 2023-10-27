@@ -1,12 +1,12 @@
 import datetime
 from DbConnector import DbConnector
-from pprint import pprint 
+from pprint import pprint
 from haversine import haversine
 from bson.son import SON
 import datetime
 
-# TODO: Add comments to tasks where this is missing
 # TODO: Check that the output of each task is what the assignment asks for
+
 
 class App:
     # initialize the database connection and cursor
@@ -16,17 +16,22 @@ class App:
         self.db = self.connection.db
 
     def removeTime(self, time):
-        return (datetime.datetime.isoformat(time))
-    
+        return datetime.datetime.isoformat(time)
+
     def task_1(self):
         print("Task 1")
-        # TODO: Add comments
+        # Use the count_documents function to get the number of documents
+        # for each collection in the database
 
+        # count users documents
         user = self.db["users"]
         user_count = user.count_documents({})
+
+        # count activity documents
         activities = self.db.activities
         activity_col_count = activities.count_documents({})
 
+        # count trackpoint documents
         trackpoints = self.db.trackpoints
         trackpoint_col_count = trackpoints.count_documents({})
 
@@ -35,116 +40,178 @@ class App:
         print("There are " + str(trackpoint_col_count) + " trackpoints in the database")
 
         print("-----------------------")
-    
+
     def task_2(self):
         print("Task 2")
-        # TODO: Add comments
-
         activities = self.db["activities"]
-        result = list(activities.aggregate([
-            {"$group": {
-                "_id": "$user_id",
-                "count": { "$sum": 1 }
-            }},
-            {"$group": {
-                "_id": None,
-                "avarage_activity": {"$avg": "$count"}
-            }}
-        ]))
+        result = list(
+            activities.aggregate(
+                [
+                    # Group and count the amount of activities for each user_id
+                    {"$group": {"_id": "$user_id", "count": {"$sum": 1}}},
+                    # Group all activities together and get the
+                    # avarage count of activities from each user
+                    {"$group": {"_id": None, "avarage_activity": {"$avg": "$count"}}},
+                ]
+            )
+        )
 
         print("Average number of activities per user: ", result[0]["avarage_activity"])
         print("-----------------------")
 
     def task_3(self):
         print("Task 3")
-        # TODO: Add comments
-        print("-----------------------")
-        
-        activities = self.db["activities"]
 
-        result = list(activities.aggregate([
-            { "$group": {
-                "_id": "$user_id",
-                "count": { "$sum": 1 }
-            }},
-            {"$sort": { "count": -1}},
-            {"$limit": 20}
-        ]))
+        activities = self.db["activities"]
+        result = list(
+            activities.aggregate(
+                [
+                    # Group and count the amount of activities for each user_id
+                    {"$group": {"_id": "$user_id", "count": {"$sum": 1}}},
+                    # Sort the counts from highest to lowest
+                    {"$sort": {"count": -1}},
+                    # Limit it to the 20 users with the highest activity count
+                    {"$limit": 20},
+                ]
+            )
+        )
 
         pprint(result)
+        print("-----------------------")
 
     def task_4(self):
         print("Task 4")
-        # TODO: Add comments
-        print("-----------------------")
         activities = self.db["activities"]
-        result = list(activities.aggregate([
-            { "$match": {
-                "transportation_mode": "taxi"
-            }},
-            {"$group": {
-                "_id": "$user_id",
-                "transportation_mode": {"$first": "$transportation_mode"},
-            }}
-            ]))
+        result = list(
+            activities.aggregate(
+                [
+                    # Get all activities that have the transportation mode equal "taxi"
+                    {"$match": {"transportation_mode": "taxi"}},
+                    # Group by user_id and use the first transportation
+                    # mode the activities of the user (since they are all taxi).
+                    # The reason for this is that we want to only select one transportation mode
+                    # for the grouping of activities for each user.
+                    {
+                        "$group": {
+                            "_id": "$user_id",
+                            "transportation_mode": {"$first": "$transportation_mode"},
+                        }
+                    },
+                ]
+            )
+        )
 
         pprint(result)
+        print("-----------------------")
 
     def task_5(self):
         print("Task 5")
-        # TODO: Add comments
         activities = self.db["activities"]
 
-        result2 = list(activities.aggregate([
-            { "$match": {
-                "transportation_mode": {"$ne": None}
-            }},
-            {"$group": {
-              "_id": "$transportation_mode",
-          }}
-        ]))
-        
-        result1 = list(activities.aggregate([
-            { "$match": {
-                "transportation_mode": {"$ne": None}
-            }},
-            {"$group": {
-              "_id": "$user_id",
-              "count": { "$sum": 1 }
-          }},
-          {"$group": {
-            "_id": None,
-           "total_activities": {"$sum": "$count"}}
-          }
-        ]))
-        
-        pprint(result2)
-        pprint(result1)
-        
+        # Get the total number of activities for each transportation mode
+        result = list(
+            activities.aggregate(
+                [
+                    # Filter out all activities that do not have a
+                    # transportation mode defined
+                    {"$match": {"transportation_mode": {"$ne": None}}},
+                    # Group all activites by the transportation mode and count
+                    # the number of activities in each mode
+                    {"$group": {"_id": "$transportation_mode", "count": {"$sum": 1}}},
+                ]
+            )
+        )
+
+        # Get the total number of labeled activities
+        total = list(
+            activities.aggregate(
+                [
+                    # Filter out all activties that do not have a
+                    # transportation mode defined
+                    {"$match": {"transportation_mode": {"$ne": None}}},
+                    # Group all together and count the total number of activities
+                    {"$group": {"_id": None, "total_activities": {"$sum": 1}}},
+                ]
+            )
+        )
+
+        pprint(result)
+        pprint(
+            "The total number of labeled activities are: "
+            + str(total[0]["total_activities"])
+        )
+
         print("-----------------------")
 
     def task_6(self):
         print("Task 6 a)")
-        # TODO: Add comments
-
         activities = self.db["activities"]
-        result = list(activities.aggregate([
-            {"$group": {
-                "_id": {"$substr": ["$start_date_time", 0, 4]},
-                "count": {"$sum": 1}
-            }},
-            {"$sort": {"count": -1}},
-            {"$limit": 1}
-        ]))
+        result = list(
+            activities.aggregate(
+                [
+                    # Group by the year of the activity and count
+                    # the number of activities per year
+                    {
+                        "$group": {
+                            "_id": {"$year": "$start_date_time"},
+                            "count": {"$sum": 1},
+                        }
+                    },
+                    # Sort the activities by the years with the highest
+                    # number of activities
+                    {"$sort": {"count": -1}},
+                    # Limit the results to the year with the highest number of activities
+                    {"$limit": 1},
+                ]
+            )
+        )
 
         pprint(result)
 
         print("-----------------------")
 
         print("Task 6 b)")
-        # TODO: Sum all recorded hours for each activity for each year
-        # and check if the year from a) is the same as the year with the
-        # most recorded hours
+        result = list(
+            activities.aggregate(
+                [
+                    # Add attributes to the activity document to make it easier to compare
+                    {
+                        "$project": {
+                            # Get what year the activity was recorded
+                            "year": {"$year": "$start_date_time"},
+                            # Get the duration of the activity in hours
+                            "duration_hours": {
+                                "$divide": [
+                                    {
+                                        # Subtract the start_date_time from the end_date_time
+                                        # to get the total elapsed time of an activity in milliseconds
+                                        "$subtract": [
+                                            "$end_date_time",
+                                            "$start_date_time",
+                                        ]
+                                    },
+                                    3600000,  # Divide the result by 3600000 to convert from milliseconds to hours
+                                ]
+                            },
+                        }
+                    },
+                    # Group by the year of the activity and sum the total duration
+                    # of all the activities each year
+                    {
+                        "$group": {
+                            "_id": "$year",
+                            "total_hours": {"$sum": "$duration_hours"},
+                        }
+                    },
+                    # Sort in descending order by the total hours
+                    {"$sort": {"total_hours": -1}},
+                ]
+            )
+        )
+        print("All years sorted by total hours")
+        pprint(result)
+
+        print("The year with the most hours recorded is " + str(result[0]["_id"]))
 
         print("-----------------------")
 
@@ -152,47 +219,65 @@ class App:
         print("Task 7")
 
         activities = self.db["activities"]
-        result = list(activities.aggregate([
-            # Fetch walk activities and corresponding trackpoints for user 112 
-            # performed in year 2008
-            {"$match": {
-                "user_id": 112,
-                "transportation_mode": "walk",
-                # Check that the start_date_time is between 2008-01-01 and
-                # 2009-01-01 using the $gte and $lt operators, which are
-                # equivalent to >= and <
-                "start_date_time": {
-                    "$gte": datetime.datetime(2008, 1, 1),
-                    "$lt": datetime.datetime(2009, 1, 1)
-                }
-            }},
-            {"$lookup": {
-                "from": "trackpoints",
-                "localField": "_id",
-                "foreignField": "activity_id",
-                "as": "trackpoints"
-            }}
-        ]))
+        result = list(
+            activities.aggregate(
+                [
+                    # Fetch walk activities and corresponding trackpoints for user 112
+                    # performed in year 2008
+                    {
+                        "$match": {
+                            "user_id": 112,
+                            "transportation_mode": "walk",
+                            # Check that the start_date_time is between 2008-01-01 and
+                            # 2009-01-01 using the $gte and $lt operators, which are
+                            # equivalent to >= and <
+                            "start_date_time": {
+                                "$gte": datetime.datetime(2008, 1, 1),
+                                "$lt": datetime.datetime(2009, 1, 1),
+                            },
+                        }
+                    },
+                    {
+                        "$lookup": {
+                            "from": "trackpoints",
+                            "localField": "_id",
+                            "foreignField": "activity_id",
+                            "as": "trackpoints",
+                        }
+                    },
+                ]
+            )
+        )
 
         # Calculate total distance for each trackpoint in each activity
         total_distance = 0
         for activity in result:
-            trackpoints = activity['trackpoints']
+            trackpoints = activity["trackpoints"]
             for i in range(len(trackpoints) - 1):
-                # Use haversine formula to calculate distance between the 
-                # current trackpoint and the next one, and add this to the 
+                # Use haversine formula to calculate distance between the
+                # current trackpoint and the next one, and add this to the
                 # total distance
-                total_distance += haversine((float(trackpoints[i]['lat']), float(trackpoints[i]['lon'])), (float(trackpoints[i+1]['lat']), float(trackpoints[i+1]['lon'])))
+                total_distance += haversine(
+                    (float(trackpoints[i]["lat"]), float(trackpoints[i]["lon"])),
+                    (
+                        float(trackpoints[i + 1]["lat"]),
+                        float(trackpoints[i + 1]["lon"]),
+                    ),
+                )
 
-        print(f'Total distance: {total_distance} km')
+        print(f"Total distance: {total_distance} km")
 
         print("-----------------------")
-    
+
     def task_8(self):
         print("Task 8")
 
         # Get all valid trackpoints sorted by activity_id and timestamp
-        trackpoints = list(self.db['trackpoints'].find({"altitude": {"$ne": '-777'}}).sort([('activity_id', 1), ('timestamp', 1)]))
+        trackpoints = list(
+            self.db["trackpoints"]
+            .find({"altitude": {"$ne": "-777"}})
+            .sort([("activity_id", 1), ("timestamp", 1)])
+        )
 
         # Initialize variables for calculating altitude gains per activity
         prev_trackpoint = None
@@ -201,22 +286,27 @@ class App:
         # Calculate altitude gains per activity
         for trackpoint in trackpoints:
             # Check if the current trackpoint is not the first one recorded for
-            # and activity and that it is part of the same activity as the 
+            # and activity and that it is part of the same activity as the
             # previous trackpoint, i.e. it has the same activity_id
-            if prev_trackpoint is not None and trackpoint['activity_id'] == prev_trackpoint['activity_id']:
+            if (
+                prev_trackpoint is not None
+                and trackpoint["activity_id"] == prev_trackpoint["activity_id"]
+            ):
                 # Calculate altitude difference between the current trackpoint
                 # and the previous one
-                altitude_diff = float(trackpoint['altitude']) - float(prev_trackpoint['altitude'])
+                altitude_diff = float(trackpoint["altitude"]) - float(
+                    prev_trackpoint["altitude"]
+                )
                 # Check if the altitude difference is positive, i.e. the current
                 # trackpoint is at a higher altitude than the previous one
                 if altitude_diff > 0:
-                    activity_id = trackpoint['activity_id']
-                    # Check if the current activity has already been added to 
+                    activity_id = trackpoint["activity_id"]
+                    # Check if the current activity has already been added to
                     # the altitude_gains dictionary, if not add it
                     if activity_id not in altitude_gains:
                         altitude_gains[activity_id] = 0
                     # Add the altitude difference to the total altitude gain
-                    # for the current activity 
+                    # for the current activity
                     altitude_gains[activity_id] += altitude_diff
             # Update the previous trackpoint to be the current one, to check
             # for altitude differences in the next iteration
@@ -224,125 +314,187 @@ class App:
 
         # Convert altitude_gains dictionary to list of documents to be inserted
         # as a temporary collection to our database
-        docs = [{'activity_id': k, 'altitude_gain': v} for k, v in altitude_gains.items()]
+        docs = [
+            {"activity_id": k, "altitude_gain": v} for k, v in altitude_gains.items()
+        ]
 
         # Insert the documents into the new altitude_gains collection
-        self.db['altitude_gains'].insert_many(docs)
+        self.db["altitude_gains"].insert_many(docs)
 
-        alt_gain_per_activity = self.db['altitude_gains']
-        result = list(alt_gain_per_activity.aggregate([
-            # Join activities and altitude_gains collections on activity_id
-            # to extract user_id for each activity, since we want to sum the 
-            # total altitude gains across all activities for each user
-            {"$lookup": {
-                "from": "activities",
-                "localField": "activity_id",
-                "foreignField": "_id",
-                "as": "activity"
-            }},
-            {"$group": {
-                "_id": "$activity.user_id",
-                "total_meters_gained_per_user": {
-                    "$sum": {
-                        "$multiply": ["$altitude_gain", 0.3048]  # Convert feet to meters
-                    }
-                }
-            }},
-            {"$sort": {"total_meters_gained_per_user": -1}},
-            {"$limit": 20}
-        ]))
+        alt_gain_per_activity = self.db["altitude_gains"]
+        result = list(
+            alt_gain_per_activity.aggregate(
+                [
+                    # Join activities and altitude_gains collections on activity_id
+                    # to extract user_id for each activity, since we want to sum the
+                    # total altitude gains across all activities for each user
+                    {
+                        "$lookup": {
+                            "from": "activities",
+                            "localField": "activity_id",
+                            "foreignField": "_id",
+                            "as": "activity",
+                        }
+                    },
+                    {
+                        "$group": {
+                            "_id": "$activity.user_id",
+                            "total_meters_gained_per_user": {
+                                "$sum": {
+                                    "$multiply": [
+                                        "$altitude_gain",
+                                        0.3048,
+                                    ]  # Convert feet to meters
+                                }
+                            },
+                        }
+                    },
+                    {"$sort": {"total_meters_gained_per_user": -1}},
+                    {"$limit": 20},
+                ]
+            )
+        )
 
         pprint(result)
 
         # Drop the temporary altitude_gains collection
-        self.db['altitude_gains'].drop()
+        self.db["altitude_gains"].drop()
 
         print("-----------------------")
-    
+
     def task_9(self):
         print("Task 9")
-        # TODO: Add comments
         trackpoints = self.db["trackpoints"]
-        
-        result = list(trackpoints.aggregate([
-            {"$sort": {"date_time": 1}
-            },
-            {"$group": {
-                "_id": "$activity_id",
-                "date_times": {"$push": "$date_time"}
-            }},
-            {"$project": {
-                "gaps": {
-                    "$map": {
-                        "input": {"$range": [0, {"$subtract": [{"$size": "$date_times"}, 1]}]},
-                        "as": "idx",
-                        "in": {
-                            "$subtract": [
-                                {"$arrayElemAt": ["$date_times", {"$add": ["$$idx", 1]}]},
-                                {"$arrayElemAt": ["$date_times", "$$idx"]}
-                            ]
+
+        result = list(
+            trackpoints.aggregate(
+                [
+                    # Sort all trackpoints by the date
+                    {"$sort": {"date_time": 1}},
+                    # Group by activity_id and push all date_times into an array
+                    {
+                        "$group": {
+                            "_id": "$activity_id",
+                            "date_times": {"$push": "$date_time"},
                         }
-                    }
-                }
-            }},
-            {"$match": {
-                "gaps": {
-                    "$elemMatch": {"$gte": 300000}  #5 minutes in milliseconds (60 * 5  * 1000)
-                }
-            }},
-            # Group by user_id and count their invalid activities
-            {"$group": {
-                "_id": "$_id",
-            }}, 
-            # Join trackpoints and activities collections on activity_id to 
-            # extract the user_id for each activity, since we want to count
-            # the number of invalid activities for each user
-            {"$lookup": {
-                "from": "activities",
-                "localField": "_id",
-                "foreignField": "_id",
-                "as": "activity_info"
-            }},
-            # Unwind the activity_info array to get a document for each 
-            # activity
-            {"$unwind": "$activity_info"},
-            # Group by user_id to get all unique users that have invalid activities
-            {"$group": {  "_id": "$activity_info.user_id", "count": {"$sum": 1}}}
-            ]))
-        
+                    },
+                    # Project a new attribute called gaps, which is an array of integers
+                    # that represent the time gaps between each trackpoint
+                    {
+                        "$project": {
+                            "gaps": {
+                                # Map over the range of indicies from 0 to the size
+                                # of the date_times array
+                                "$map": {
+                                    "input": {
+                                        "$range": [
+                                            0,
+                                            {
+                                                # Subtract 1 from the size of arrays. We do this because we do
+                                                # not want to traverse the last element in the array
+                                                "$subtract": [
+                                                    {"$size": "$date_times"},
+                                                    1,
+                                                ]
+                                            },
+                                        ]
+                                    },
+                                    # current index in the array
+                                    "as": "idx",
+                                    "in": {
+                                        # Subtract the current element from the next element in date_times.
+                                        # This logic is the reason we do not traverse the last element in the array
+                                        "$subtract": [
+                                            {
+                                                "$arrayElemAt": [
+                                                    "$date_times",
+                                                    # the next index in the array
+                                                    {"$add": ["$$idx", 1]},
+                                                ]
+                                            },
+                                            # the current index in the array
+                                            {"$arrayElemAt": ["$date_times", "$$idx"]},
+                                        ]
+                                    },
+                                }
+                            }
+                        }
+                    },
+                    # Get all activities that have trackpoints with a gap greater than 30000 milliseconds (5 minutes)
+                    {
+                        "$match": {
+                            "gaps": {
+                                "$elemMatch": {
+                                    "$gte": 300000
+                                }  # 5 minutes in milliseconds (60 * 5  * 1000)
+                            }
+                        }
+                    },
+                    # Group by user_id and count their invalid activities
+                    {
+                        "$group": {
+                            "_id": "$_id",
+                        }
+                    },
+                    # Join trackpoints and activities collections on activity_id to
+                    # extract the user_id for each activity, since we want to count
+                    # the number of invalid activities for each user
+                    {
+                        "$lookup": {
+                            "from": "activities",
+                            "localField": "_id",
+                            "foreignField": "_id",
+                            "as": "activity_info",
+                        }
+                    },
+                    # Unwind the activity_info array to get a document for each
+                    # activity
+                    {"$unwind": "$activity_info"},
+                    # Group by user_id to get all unique users that have invalid activities
+                    {"$group": {"_id": "$activity_info.user_id", "count": {"$sum": 1}}},
+                ]
+            )
+        )
+
         pprint(result)
         print("-----------------------")
-    
+
     def task_10(self):
         print("Task 10")
 
         trackpoints = self.db["trackpoints"]
-        result = list(trackpoints.aggregate([
-            # Fetch all trackpoints that start with latitude 39.916 and 
-            # longitude 116.397
-            {"$match": {
-                'lat': {'$regex':'^39.916'},
-                'lon': {'$regex':'^116.397'}
-            }},
-            # Join trackpoints and activities collections on activity_id to 
-            # extract the user_id for each activity, since we want to count
-            # the number of unique users that have performed activities in
-            # the Forbidden City of Beijing
-            {"$lookup": {
-                "from": "activities",
-                "localField": "activity_id",
-                "foreignField": "_id",
-                "as": "activity_info"
-            }},
-            # Unwind the activity_info array to get a document for each 
-            # activity
-            {"$unwind": "$activity_info"},
-            # Group by user_id to get all unique users that have performed
-            # activities in this area
-            {"$group": {
-                "_id": "$activity_info.user_id"
-            }}
-        ]))
+        result = list(
+            trackpoints.aggregate(
+                [
+                    # Fetch all trackpoints that start with latitude 39.916 and
+                    # longitude 116.397
+                    {
+                        "$match": {
+                            "lat": {"$regex": "^39.916"},
+                            "lon": {"$regex": "^116.397"},
+                        }
+                    },
+                    # Join trackpoints and activities collections on activity_id to
+                    # extract the user_id for each activity, since we want to count
+                    # the number of unique users that have performed activities in
+                    # the Forbidden City of Beijing
+                    {
+                        "$lookup": {
+                            "from": "activities",
+                            "localField": "activity_id",
+                            "foreignField": "_id",
+                            "as": "activity_info",
+                        }
+                    },
+                    # Unwind the activity_info array to get a document for each
+                    # activity
+                    {"$unwind": "$activity_info"},
+                    # Group by user_id to get all unique users that have performed
+                    # activities in this area
+                    {"$group": {"_id": "$activity_info.user_id"}},
+                ]
+            )
+        )
 
         pprint(result)
 
@@ -352,43 +504,54 @@ class App:
         print("Task 11")
 
         activities = self.db["activities"]
-        result = list(activities.aggregate([
-            # Fetch all activities that have a transportation mode registered
-            {"$match": {
-                "transportation_mode": {"$ne": None}
-            }},
-            # Group by user_id to get all unique users and their 
-            # transportation modes
-            {"$group": {
-                "_id": "$user_id",
-                "transportation_modes": {"$push": "$transportation_mode"}
-            }},
-            # Unwind the transportation_modes array to get a document for each
-            # transportation mode
-            {"$unwind": "$transportation_modes"},
-            # Group by user_id and transportation_mode to get the number of
-            # occurrences of each transportation mode for each user
-            {"$group": {
-                "_id": {
-                    "user_id": "$_id",
-                    "transportation_mode": "$transportation_modes"
-                },
-                "count": {"$sum": 1} 
-            }},
-            # Sort by count in descending order and then by user_id in 
-            # descending order
-            {"$sort": SON([("count", -1), ("_id", -1)])},
-            # Group by user_id to get the most used transportation mode for
-            # each user
-            {"$group": {
-                "_id": "$_id.user_id",
-                "most_used_transportation_mode": {"$first": "$_id.transportation_mode"} # Get the first element in the sorted array
-            }}
-        ]))
+        result = list(
+            activities.aggregate(
+                [
+                    # Fetch all activities that have a transportation mode registered
+                    {"$match": {"transportation_mode": {"$ne": None}}},
+                    # Group by user_id to get all unique users and their
+                    # transportation modes
+                    {
+                        "$group": {
+                            "_id": "$user_id",
+                            "transportation_modes": {"$push": "$transportation_mode"},
+                        }
+                    },
+                    # Unwind the transportation_modes array to get a document for each
+                    # transportation mode
+                    {"$unwind": "$transportation_modes"},
+                    # Group by user_id and transportation_mode to get the number of
+                    # occurrences of each transportation mode for each user
+                    {
+                        "$group": {
+                            "_id": {
+                                "user_id": "$_id",
+                                "transportation_mode": "$transportation_modes",
+                            },
+                            "count": {"$sum": 1},
+                        }
+                    },
+                    # Sort by count in descending order and then by user_id in
+                    # descending order
+                    {"$sort": SON([("count", -1), ("_id", -1)])},
+                    # Group by user_id to get the most used transportation mode for
+                    # each user
+                    {
+                        "$group": {
+                            "_id": "$_id.user_id",
+                            "most_used_transportation_mode": {
+                                "$first": "$_id.transportation_mode"
+                            },  # Get the first element in the sorted array
+                        }
+                    },
+                ]
+            )
+        )
 
         pprint(result)
 
         print("-----------------------")
+
 
 def main():
     program = None
@@ -411,5 +574,6 @@ def main():
         if program:
             program.connection.close_connection()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

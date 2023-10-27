@@ -5,7 +5,6 @@ from haversine import haversine
 from bson.son import SON
 import datetime
 
-# TODO: Check that the output of each task is what the assignment asks for
 
 
 class App:

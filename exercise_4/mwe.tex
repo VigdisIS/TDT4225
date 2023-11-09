@@ -1,0 +1,240 @@
+\RequirePackage{filecontents}
+\begin{filecontents*}{\jobname.bib}
+@Book{CS,
+  Title                    = {Chemistry in Space. From Interstellar Matter to Organic Life},
+  Author                   = {Dieter Rehder},
+  Publisher                = {John Wiley and Sons},
+  Year                     = {2010},
+  ISBN                     = {9783527326891},
+  Keywords                 = {physics}
+}
+
+@Article{EPS,
+  Title                    = {Energy Production in Stars},
+  Author                   = {Hans Albrecht Bethe},
+  Journal                  = {Physical Review},
+  Year                     = {1939},
+  Number                   = {5},
+  Pages                    = {434--456},
+  Volume                   = {55},
+  DOI                      = {http://journals.aps.org/pr/abstract/10.1103/PhysRev.55.434},
+  Keywords                 = {physics}
+}
+
+@Book{FP,
+  Title                    = {Fusion Physics},
+  Author                   = {Mitsuru Kikuchi and Karl Lackner and Minh Quang Tran},
+  Publisher                = {International Atomic Energy Agency},
+  Year                     = {2012},
+  Series                   = {International Atomic Energy Agency},
+  ISBN                     = {9789201304100},
+  Keywords                 = {physics}
+}
+
+@Book{INP,
+  Title                    = {Introductory Nuclear Physics},
+  Author                   = {Kenneth S. Krane},
+  Publisher                = {John Wiley and Sons},
+  Year                     = {1987},
+  ISBN                     = {9780471805533},
+  Keywords                 = {physics}
+}
+
+@Book{kleppmann_2017,
+  Title                    = {Designing Data-Intensive Applications},
+  Author                   = {Kleppmann, Martin},
+  Year                     = {2017}
+}
+
+@Article{SES,
+  Title                    = {Synthesis of the Elements in Stars},
+  Author                   = {K. MARGARET BURBIDGE and G. R. BURBIDGE and WILLIAM A. FOWLER and F. HOYLE},
+  Journal                  = {Reviews of Modern Physics},
+  Year                     = {1957},
+  Number                   = {4},
+  Pages                    = {547--650},
+  Volume                   = {29},
+  DOI                      = {http://journals.aps.org/rmp/abstract/10.1103/RevModPhys.29.547},
+  Keywords                 = {physics}
+}
+
+@Article{SEWMS,
+  Title                    = {Stellar Evolution Within and off the Main Sequence},
+  Author                   = {Icko Iben},
+  Journal                  = {Annual Review of Astronomy and Astrophysics},
+  Year                     = {1966},
+  Pages                    = {571--626},
+  Volume                   = {5},
+  DOI                      = {http://adsabs.harvard.edu/full/1967ARA%26A...5..571I},
+  Keywords                 = {physics}
+}
+
+
+
+\end{filecontents*}
+
+
+\documentclass[11pt,a4paper]{article}
+\usepackage{graphicx}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{comment}
+\usepackage{amsmath}
+\usepackage{csquotes} % <==================================
+\usepackage[%
+  backend=bibtex, % biber bibtex % <=======================
+  style=alphabetic,
+  sorting=ynt,
+]{biblatex}
+\usepackage{float}
+% Customized header and footer
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.1ex}
+\renewcommand{\footrulewidth}{0.1ex}
+\fancyfoot[C]{\thepage}
+
+%\bibliography{biblio} % <===============not needed =======
+\addbibresource{\jobname.bib}
+
+\fancyhead{} % clear all header fields
+\fancyhead[LO]{\textbf{Vigdis-Irene Steinsund}}
+\fancyhead[CO]{\textbf{TDT4225 - Exercise 4}}
+\fancyhead[RO]{\textbf{10/11/2023}}
+
+
+\begin{document}
+\begin{enumerate}
+    \item 
+        \begin{enumerate}
+            \item One should use multi-leader replication in cases where 
+                \begin{enumerate} 
+                    \item we have multiple datacenters
+                    \item we have an application that needs to continue working
+                        even in cases where its connection to the internet 
+                        has dropped.
+                    \item we have a system in which multiple users need to be 
+                        able to collaborate and edit in real time.
+                \end{enumerate}
+                This type of replication allows for better performance, since 
+                writes can be processed locally, and then replicated 
+                asynchronously to other datacenters. Additionally, this makes 
+                for a higher tolerance of outages since each datacenter can 
+                continue operating normally even when one datacenter has failed. 
+                A replication like this will also make it so that the system
+                tolerates network problems better, since a temporary network
+                outage would not prevent writes from being processed.
+                \\ One could use leader-based replication in single datacenters or
+                in general in cases where for instance it is not a problem for 
+                the system that all writes must go through this one leader, and 
+                that the system won't often experience network interruption
+                \autocite[pp.~168-170]{kleppmann_2017}.
+            \item One should use log shipping as a replication means instead of
+                just replicating the SQL statements because sending SQL
+                statements can be unpredictable in terms of non-deterministic
+                functions, where functions calling for a time now or a randomly
+                generated number will be different on the different replicas. 
+                This method can also cause unpredictable scenarios in terms of
+                auto-incrementing IDs, in addition to side effects
+                possibly having different results on different replicas 
+                \autocite[p.~159]{kleppmann_2017}.
+        \end{enumerate}
+    \item 
+    \begin{enumerate}
+        \item The best way of supporting re-partitioning is by using a hash
+            function to decide the partition for a given key. This way,
+            skewed data is uniformly distributed 
+            \autocite[pp.~201-205]{kleppmann_2017}.
+        \item Global indexes make reads more efficient than when using a local
+            index, so if the system is read-heavy, global indexes would be
+            better, rather than if the system is write-heavy, in which case
+            local indexes would be better \autocite[p.~208]{kleppmann_2017}.
+    \end{enumerate}
+    \item 
+    \begin{enumerate}
+        \item The given scheduel will be executed the following way using 
+            read commmitted:
+            \begin{enumerate}
+                \item r1(A): Transaction 1 reads A. No lock conflict.
+                \item w2(A): Transaction 2 wants to write to A. This operation must wait because A was read by Transaction 1 and the write operation cannot proceed until Transaction 1 commits.
+                \item w2(B): This operation must also wait because Transaction 2 is waiting to write to A.
+                \item r1(B): Transaction 1 reads B. No lock conflict.
+                \item c1: Transaction 1 commits. The lock on A is released.
+                \item w2(A), w2(B): Now that Transaction 1 has committed, Transaction 2 can write to A and B.
+                \item c2: Transaction 2 commits.
+            \end{enumerate}
+            In snapshot isolation, the given schedule will be executed the
+            following way:
+            \begin{enumerate}
+                \item r1(A): Transaction 1 reads A. It gets a snapshot of A at the time the transaction began.
+                \item w2(A): Transaction 2 writes to A. This does not affect Transaction 1's snapshot.
+                \item w2(B): Transaction 2 writes to B. Again, this does not affect Transaction 1's snapshot.
+                \item r1(B): Transaction 1 reads B. It sees the snapshot from when the transaction began, not the updated value from Transaction 2.
+                \item c1: Transaction 1 commits.
+                \item c2: Transaction 2 commits.
+            \end{enumerate}
+        \item Using serializable with 2PL, the given shceule will be executed
+            the following way:
+            \begin{enumerate}
+                \item r1(A): Transaction 1 reads A. It gets a lock on A.
+                \item w2(A): Transaction 2 wants to write to A. This operation must wait because A is locked by Transaction 1.
+                \item w2(B): Transaction 2 wants to write to B. Since there is no lock on B, this operation can proceed. Transaction 2 now holds a lock on B.
+                \item r1(B): Transaction 1 wants to read B. This operation must wait because B is locked by Transaction 2.
+                \item c1: Transaction 1 commits. The locks on A and B are released.
+                \item w2(A): Now that Transaction 1 has committed, Transaction 2 can write to A.
+                \item c2: Transaction 2 commits.
+            \end{enumerate}
+    \end{enumerate}
+    \item 
+    \begin{enumerate}
+        \item There can be numerous reasons as to why a message in a network 
+            won't get a reply once its been sent. Some of them are:
+            \begin{enumerate}
+                \item The packet may be lost.
+                \item It may be delayed due to it waiting in queue.
+                \item The remote node may have failed, either from crashing or 
+                    potentially being powered down. It may also have stopped 
+                    working altogether.
+                \item The response to the message could have been lost or 
+                    delayed.
+            \end{enumerate}
+            \autocite[p.~278]{kleppmann_2017}
+        \item Using clocks for last write wins could be dangerous due to the
+            fact that database writes could disappear due to nodes with 
+            lagging clocks being unable to overwrite any value already written
+            by a node with a faster clock, until the skew has been resolved.
+            Last write wins can also not differentiate between writes that
+            happened sequentially in quick succession. It is also possible for 
+            two nodes to generate writes with the exact same timestamp, which
+            needs another tiebraker value to solve the conflict, though this 
+            can lead to violations of causality 
+            \autocite[pp.~292-293]{kleppmann_2017}.
+    \end{enumerate}
+    \item 
+    \begin{enumerate}
+        \item The connection between ordering, linearizability, and consensus
+            is that they all deal with the issue of maintaining consistency in 
+            distributed systems. Linearizability is a strong form of consistency 
+            that makes it easier to understand and predict how concurrent 
+            operations will behave. Consensus algorithms can be used to decide 
+            on a global order of operations, which is useful for implementing 
+            linearizable systems \autocite[pp.~373-375]{kleppmann_2017}.
+        \item There are numerous distributed systems that are usable even when
+            they are not linearizable, usually due to the fact that they provide
+            other forms of consistency guarantees. Examples of these are 
+            leaderless and multi-leader replication systems 
+            \autocite[p.~375]{kleppmann_2017}. 
+    \end{enumerate}
+    \item 
+    \begin{enumerate}
+        \item 
+        \item 
+    \end{enumerate}
+    \item jj
+    \item jj
+  \end{enumerate}
+
+\newpage
+\printbibliography
+\end{document}

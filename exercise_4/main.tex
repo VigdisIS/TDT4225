@@ -1,0 +1,24 @@
+\documentclass{article}
+
+% Importing document settings from our file "packages.sty"
+\usepackage{packages}
+
+\fancyhead{} % clear all header fields
+\fancyhead[LO]{\textbf{Vigdis-Irene Steinsund}}
+\fancyhead[CO]{\textbf{TDT4225 - Exercise 4}}
+\fancyhead[RO]{\textbf{10/11/2023}}
+
+% Beginning of document
+\begin{document}
+
+    % Defining main matter settings (Norsk: innstillinger for hoveddelen av teksten)
+    \mainmatter
+
+    \import{./Sections/}{Questions}
+
+    % Printing bibliography
+    \newpage
+    \printbibliography[heading = bibintoc, title = Bibliography]    % 'bibintoc' inserts our bibliography into the table of contents
+
+% End of document
+\end{document}

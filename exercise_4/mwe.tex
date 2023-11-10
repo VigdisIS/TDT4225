@@ -46,27 +46,25 @@
   Year                     = {2017}
 }
 
-@Article{SES,
-  Title                    = {Synthesis of the Elements in Stars},
-  Author                   = {K. MARGARET BURBIDGE and G. R. BURBIDGE and WILLIAM A. FOWLER and F. HOYLE},
-  Journal                  = {Reviews of Modern Physics},
-  Year                     = {1957},
-  Number                   = {4},
-  Pages                    = {547--650},
-  Volume                   = {29},
-  DOI                      = {http://journals.aps.org/rmp/abstract/10.1103/RevModPhys.29.547},
-  Keywords                 = {physics}
+@Article{Rahut_2023,
+  Title                    = {Building and deploying MySQL Raft at Meta},
+  Author                   = {Rahut, Anirban and Sharma, Abhinav and Shen, Yichen and Haque, Ahsanul},
+  Journal                  = {Engineering at Meta},
+  Year                     = {2023},
+  DOI                      = {https://engineering.fb.com/2023/05/16/data-infrastructure/mysql-raft-meta/},
 }
 
-@Article{SEWMS,
-  Title                    = {Stellar Evolution Within and off the Main Sequence},
-  Author                   = {Icko Iben},
-  Journal                  = {Annual Review of Astronomy and Astrophysics},
-  Year                     = {1966},
-  Pages                    = {571--626},
-  Volume                   = {5},
-  DOI                      = {http://adsabs.harvard.edu/full/1967ARA%26A...5..571I},
-  Keywords                 = {physics}
+@Article{Ongaro_2014,
+  Title                    = {In Search of an Understandable Consensus Algorithm},
+  Author                   = {Ongaro, Diego and Ousterhout, John},
+  Journal                  = {Proceedings of USENIX ATC'14},
+  Year                     = {2014}
+}
+
+@Book{couloris_2011,
+author = {Coulouris, George and Dollimore, Jean and Kindberg, Tim and Blair, Gordon},
+title = {Distributed Systems: Concepts and Design},
+year = {2011}
 }
 
 
@@ -99,9 +97,9 @@
 \addbibresource{\jobname.bib}
 
 \fancyhead{} % clear all header fields
-\fancyhead[LO]{\textbf{Vigdis-Irene Steinsund}}
-\fancyhead[CO]{\textbf{TDT4225 - Exercise 4}}
-\fancyhead[RO]{\textbf{10/11/2023}}
+\fancyhead[LO]{\fontsize{8}{12} \textbf{Vigdis-Irene Steinsund}}
+\fancyhead[CO]{\fontsize{10}{12} \textbf{TDT4225 - Exercise 4}}
+\fancyhead[RO]{\fontsize{8}{12} \textbf{10/11/2023}}
 
 
 \begin{document}
@@ -157,30 +155,30 @@
             read commmitted:
             \begin{enumerate}
                 \item r1(A): Transaction 1 reads A. No lock conflict.
-                \item w2(A): Transaction 2 wants to write to A. This operation must wait because A was read by Transaction 1 and the write operation cannot proceed until Transaction 1 commits.
+                \item w2(A): Transaction 2 wants to write to A, but must wait because A was read by Transaction 1 and the write operation cannot proceed until after Transaction 1 commits.
                 \item w2(B): This operation must also wait because Transaction 2 is waiting to write to A.
                 \item r1(B): Transaction 1 reads B. No lock conflict.
-                \item c1: Transaction 1 commits. The lock on A is released.
+                \item c1: Transaction 1 commits and the lock on A is released.
                 \item w2(A), w2(B): Now that Transaction 1 has committed, Transaction 2 can write to A and B.
                 \item c2: Transaction 2 commits.
             \end{enumerate}
             In snapshot isolation, the given schedule will be executed the
             following way:
             \begin{enumerate}
-                \item r1(A): Transaction 1 reads A. It gets a snapshot of A at the time the transaction began.
-                \item w2(A): Transaction 2 writes to A. This does not affect Transaction 1's snapshot.
-                \item w2(B): Transaction 2 writes to B. Again, this does not affect Transaction 1's snapshot.
-                \item r1(B): Transaction 1 reads B. It sees the snapshot from when the transaction began, not the updated value from Transaction 2.
+                \item r1(A): Transaction 1 reads A and gets a snapshot of A at the time the transaction began.
+                \item w2(A): Transaction 2 writes to A, which does not affect Transaction 1's snapshot.
+                \item w2(B): Transaction 2 writes to B, which also does not affect Transaction 1's snapshot.
+                \item r1(B): Transaction 1 reads B and sees the snapshot from when the transaction began, not the updated value from Transaction 2.
                 \item c1: Transaction 1 commits.
                 \item c2: Transaction 2 commits.
             \end{enumerate}
         \item Using serializable with 2PL, the given shceule will be executed
             the following way:
             \begin{enumerate}
-                \item r1(A): Transaction 1 reads A. It gets a lock on A.
-                \item w2(A): Transaction 2 wants to write to A. This operation must wait because A is locked by Transaction 1.
-                \item w2(B): Transaction 2 wants to write to B. Since there is no lock on B, this operation can proceed. Transaction 2 now holds a lock on B.
-                \item r1(B): Transaction 1 wants to read B. This operation must wait because B is locked by Transaction 2.
+                \item r1(A): Transaction 1 reads and gets a lock on A.
+                \item w2(A): Transaction 2 wants to write to A, but must wait because A is locked by Transaction 1.
+                \item w2(B): Transaction 2 wants to write to B, and since there is no lock on B, this operation can proceed. Transaction 2 now holds a lock on B.
+                \item r1(B): Transaction 1 wants to read B, but must wait because B is locked by Transaction 2.
                 \item c1: Transaction 1 commits. The locks on A and B are released.
                 \item w2(A): Now that Transaction 1 has committed, Transaction 2 can write to A.
                 \item c2: Transaction 2 commits.
@@ -228,11 +226,49 @@
     \end{enumerate}
     \item 
     \begin{enumerate}
+        \item Using logical clocks, one cannot necessarily deduce that e
+            "happened before" f. This is because logical clocks only provides
+            a partial ordering of events: e and f could still be concurrent 
+            events even though L(e) < L(f) \autocite[p.~607]{couloris_2011}. 
+            \\ If one uses vector clocks instead, one can deduce that e
+            "happened before" f when V(e) < V(f), since an array of logical
+            clocks are maintaned and updated based on specific rules for each 
+            process in the system \autocite[p.~609]{couloris_2011}.
         \item 
-        \item 
+            \begin{enumerate}
+                \item b: (4, 0, 0)
+                \item c: (0, 3, 2)
+                \item k: (4, 2, 0)
+                \item m: (0, 3, 0)
+                \item n: (5, 4, 0)
+                \item u: (0, 4, 0)
+            \end{enumerate}
+            \autocite[p.~610]{couloris_2011}
+        \item A series of possible consistent states the system can have had 
+            would be:
+            \begin{enumerate}
+                \item S00: Initial state where both P1 and P2 are at (0,0).
+                \item S10: P1 has processed its first event, moving to (1,0).
+                \item S11: P2 receives the message from P1 and moves to (1,1).
+                \item S20: P1 processes another local event, moving to (2,1).
+                \item S21: P2 processes a local event, moving to (2,2).
+                \item S31: P1 sends a message to P2, moving to (3,2).
+                \item S32: P2 receives the message from P1 and moves to (3,3).
+            \end{enumerate}
+            \autocite[p.~622]{couloris_2011}
     \end{enumerate}
-    \item jj
-    \item jj
+    \item  RAFT ensures that the log is equal on all nodes in case of a crash 
+        and a new leader by electing a new leader when an existing one fails,
+        and accepting and replicating logs across the cluster by enforcing
+        other logs to agree with the leader's log 
+        \autocite[p.~307]{Ongaro_2014}. 
+    \item The main advantages from introducing RAFT into MySQL was making it 
+        into a truly distributed system by moving the source of truth of 
+        membership and leadership inside the server, since operations like 
+        promotions of new leaders and membership changes were the cause of most
+        of the issues they were facing. This enabled provable correctness of 
+        promotions of new leaders and any membership changes within the server
+        \autocite{Rahut_2023}.
   \end{enumerate}
 
 \newpage
